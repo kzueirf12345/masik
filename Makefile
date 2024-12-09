@@ -1,5 +1,6 @@
 .PHONY: all build clean rebuild \
 		logger_build logger_clean logger_rebuild \
+		stack_build stack_clean stack_rebuild	\
 		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
 
 PROJECT_NAME = masik
@@ -43,13 +44,13 @@ endif
 
 FLAGS += $(ADD_FLAGS)
 
-LIBS = -lm -L./libs/logger -llogger
+LIBS = -lm -L./libs/logger -llogger -L./libs/stack_on_array -lstack
 
 
-DIRS = utils flags
+DIRS = utils flags operations lexer
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
-SOURCES = main.c utils/utils.c flags/flags.c
+SOURCES = main.c utils/utils.c flags/flags.c operations/operations.c lexer/lexer.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
@@ -70,7 +71,7 @@ rebuild: clean_all build
 $(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
 	@$(COMPILER) $(FLAGS) -o $@ $^  $(LIBS)
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | ./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | ./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build stack_build
 	@$(COMPILER) $(FLAGS) -I$(SRC_DIR) -I./libs -c -MMD -MP $< -o $@
 
 -include $(DEPS_REL_PATH)
@@ -89,8 +90,16 @@ logger_build:
 logger_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger
 
+stack_rebuild: stack_build stack_clean
 
-clean_all: clean_obj clean_deps clean_out logger_clean
+stack_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array
+
+stack_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array
+
+
+clean_all: clean_obj clean_deps clean_out logger_clean stack_clean
 
 clean: clean_obj clean_deps clean_out
 

@@ -3,6 +3,7 @@
 
 #include "logger/liblogger.h"
 #include "flags/flags.h"
+#include "lexer/lexer.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -17,7 +18,21 @@ int main(const int argc, char* const argv[])
         return EXIT_FAILURE;
     }
 
-    printf("Hello world!\n");
+    lexer_t lexer;
+    LEXER_ERROR_HANDLE(lexer_ctor(&lexer),
+                                                                              dtor_all(&flags_objs);
+    );
+
+    LEXER_ERROR_HANDLE(lexing(&lexer, flags_objs.in_filename),
+                                                           lexer_dtor(&lexer);dtor_all(&flags_objs);
+    );
+
+    for (size_t i = 0; i < stack_size(lexer.stack); ++i)
+    {
+        fprintf(stderr, "num: %lu\n", lexer_get(lexer, i)->data.num);
+    }
+
+    lexer_dtor(&lexer);
     
     if (dtor_all(&flags_objs))
     {
@@ -40,7 +55,6 @@ int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
         fprintf(stderr, "Can't setlocale\n");
         return EXIT_FAILURE;
     }
-
 
     FLAGS_ERROR_HANDLE(flags_objs_ctor (flags_objs));
     FLAGS_ERROR_HANDLE(flags_processing(flags_objs, argc, argv));

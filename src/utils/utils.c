@@ -1,10 +1,14 @@
-#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "utils.h"
 #include "logger/liblogger.h"
@@ -78,4 +82,84 @@ int is_empty_file (FILE* file)
     }
 
     return res;
+}
+
+static int str_size_from_file_(size_t* const str_size, const int fd);
+
+int str_from_file(const char* const filename, wchar_t** str, size_t* const str_size)
+{
+    lassert(!is_invalid_ptr(filename), "");
+    lassert(!is_invalid_ptr(str), "");
+    lassert(str_size, "");
+
+    int fd = open(filename, O_RDWR);
+    if (fd == -1)
+    {
+        perror("Can't fopen input file");
+        return 1;
+    }
+
+    if (str_size_from_file_(str_size, fd))
+    {
+        fprintf(stderr, "Can't str_size_from_file_\n");
+        close(fd);
+        return 1;
+    }
+
+    char* temp_str = mmap(NULL, *str_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    *str = calloc(*str_size, sizeof(**str));
+
+    if (!*str)
+    {
+        perror("Can't calloc *str");
+        close(fd);
+        return 1;
+    }
+
+    if (mbstowcs(*str, temp_str, *str_size * sizeof(**str)) == 1)
+    {
+        perror("Can't mbstowcs");
+        close(fd);
+        return 1;
+    }
+
+    if (*str == MAP_FAILED)
+    {
+        perror("Can't mmap");
+        close(fd);
+        return 1;
+    }
+
+    if (close(fd))
+    {
+        perror("Can't fclose input file");
+        return 1;
+    }
+    IF_DEBUG(fd = -1;)
+
+    return 0;
+}
+
+static int str_size_from_file_(size_t* const str_size, const int fd)
+{
+    lassert(str_size, "");
+    lassert(fd != -1, "");
+
+    struct stat fd_stat = {};
+
+    if (fstat(fd, &fd_stat))
+    {
+        perror("Can't fstat");
+        return 1;
+    }
+
+    *str_size = (size_t)fd_stat.st_size;
+
+    return 0;
+}
+
+bool isnum(const wchar_t chr)
+{
+    return L'0' <= chr && chr <= L'9';
 }

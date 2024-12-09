@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <wchar.h>
 
 #include "concole.h"
 
@@ -29,5 +31,9 @@ static_assert(PTR_STATES_VALID == 0);
 enum PtrState is_invalid_ptr(const void* ptr);
 
 int is_empty_file (FILE* file);
+
+int str_from_file(const char* const filename, wchar_t** str, size_t* const str_size);
+
+bool isnum(const wchar_t chr);
 
 #endif /*MASIK_SRC_UTILS_UTILS_H*/
