@@ -1,3 +1,6 @@
 [submodule "libs/logger"]
 	path = libs/logger
 	url = https://github.com/kzueirf12345/logger.git
+[submodule "libs/stack_on_array"]
+	path = libs/stack_on_array
+	url = https://github.com/kzueirf12345/stack_on_array.git
