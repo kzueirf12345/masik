@@ -42,6 +42,8 @@ enum LexemType
 };
 static_assert(LEXEM_TYPE_END == 0);
 
+const char* lexem_type_to_str(const enum LexemType type);
+
 typedef union LexemData
 {
     num_t num;

@@ -38,6 +38,19 @@ const char* lexer_strerror(const enum LexerError error)
     } while(0)
 
 
+const char* lexem_type_to_str(const enum LexemType type)
+{
+    switch (type)
+    {
+        case LEXEM_TYPE_NUM: return "NUM";
+        case LEXEM_TYPE_OP:  return "OP";
+        case LEXEM_TYPE_END: return "END";
+    default:
+        return "UNKNOWN_LEXEM_TYPE";
+    }
+    return "UNKNOWN_LEXEM_TYPE";
+}
+
 #define START_CAPACITY_ 256
 enum LexerError lexer_ctor(lexer_t* const lexer)
 {

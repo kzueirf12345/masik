@@ -1,7 +1,8 @@
 .PHONY: all build clean rebuild \
 		logger_build logger_clean logger_rebuild \
 		stack_build stack_clean stack_rebuild	\
-		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
+		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin
+# precompile
 
 PROJECT_NAME = masik
 
@@ -51,7 +52,7 @@ DIRS = utils flags operations lexer syntaxer syntaxer/funcs syntaxer/verificatio
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 SOURCES = main.c utils/utils.c flags/flags.c operations/operations.c lexer/lexer.c	\
-		  syntaxer/verification/verification.c syntaxer/funcs/create.c
+		  syntaxer/verification/verification.c syntaxer/funcs/create.c syntaxer/verification/dumb.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
@@ -72,7 +73,7 @@ rebuild: clean_all build
 $(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
 	@$(COMPILER) $(FLAGS) -o $@ $^  $(LIBS)
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | ./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build stack_build
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | ./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build stack_build # precompile
 	@$(COMPILER) $(FLAGS) -I$(SRC_DIR) -I./libs -c -MMD -MP $< -o $@
 
 -include $(DEPS_REL_PATH)
@@ -81,6 +82,9 @@ $(BUILD_DIRS):
 	mkdir $@
 ./$(BUILD_DIR)/:
 	mkdir $@
+
+# precompile : 
+# 	$(COMPILER) -I$(SRC_DIR) -I./libs -E $(SOURCES_REL_PATH)
 
 
 logger_rebuild: logger_build logger_clean

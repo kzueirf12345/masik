@@ -104,6 +104,8 @@ enum SyntaxError syntaxer_ctor(syntaxer_t* const syntaxer, const lexer_t lexer)
 
     syntaxer->size = size_;
                                                                      stack_dtor(&desc_state.errors);
+
+    SYNTAXER_VERIFY(syntaxer);
     return SYNTAX_ERROR_SUCCESS;
 }
 
@@ -161,37 +163,31 @@ enum SyntaxError output_errors_(desc_state_t desc_state)
             if (IS_FAILURE_) { RET_FAILURE_(__VA_ARGS__); }                                         \
         } while(0)
 
-// #define LATTICE_ #
-// #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                             
-//     LATTICE_##define name_##_(lt, rt) syntax_elem_ctor(CUR_LEX_, lt, rt)
 
-// #include "operations/codegen.h"
-
-// #undef OPERATION_HANDLE
-
-#define CREATE_ELEM_(lex, lt, rt) syntax_elem_ctor(lex, lt, rt)
+#define CREATE_ELEM_(lex, lt, rt) (++size_, syntax_elem_ctor(lex, lt, rt))
 
 #define IS_OP_  (CUR_LEX_.type == LEXEM_TYPE_OP)
 #define IS_NUM_ (CUR_LEX_.type == LEXEM_TYPE_NUM)
 
-// #define LATTICE_ #
-// #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                
-//     LATTICE_##define IS_##name_##_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_##name_)
+// #define DEF_OPERATION_HANDLE
+
+// #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                             
+//         IS_##name_##_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_##name_)
 
 // #include "operations/codegen.h"
 
 // #undef OPERATION_HANDLE
+// #undef DEF_OPERATION_HANDLE
 
-#define IS_SUM_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_SUM)
-#define IS_SUB_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_SUB)
-#define IS_MUL_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_MUL)
-#define IS_DIV_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_DIV)
-#define IS_POW_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_POW)
-#define IS_LBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_LBRAKET)
-#define IS_RBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_RBRAKET)
+#define IS_OP_TYPE_(name_) (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_##name_)
 
-#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
-        case OP_TYPE_##name_: ++size_; elem = CREATE_ELEM_(lexem, elem, elem2); break;
+// #define IS_SUM_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_SUM)
+// #define IS_SUB_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_SUB)
+// #define IS_MUL_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_MUL)
+// #define IS_DIV_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_DIV)
+// #define IS_POW_     (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_POW)
+// #define IS_LBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_LBRAKET)
+// #define IS_RBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_RBRAKET)
 
 syntax_elem_t* desc_start_  (desc_state_t* const desc_state)
 {
@@ -201,11 +197,15 @@ syntax_elem_t* desc_start_  (desc_state_t* const desc_state)
 
     if (CUR_LEX_.type != LEXEM_TYPE_END)
     {
+        fprintf(stderr, "desc_start fail\n");
         RET_FAILURE_(syntax_elem_dtor_recursive(&elem););
     }
 
     return elem;
 }
+
+#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
+        case OP_TYPE_##name_: elem = CREATE_ELEM_(lexem, elem, elem2); break;
 
 syntax_elem_t* desc_sum_    (desc_state_t* const desc_state)
 {
@@ -214,7 +214,7 @@ syntax_elem_t* desc_sum_    (desc_state_t* const desc_state)
     syntax_elem_t* elem = desc_mul_(desc_state);
     CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
 
-    while (IS_SUM_ || IS_SUB_)
+    while (IS_OP_TYPE_(SUM) || IS_OP_TYPE_(SUB))
     {
         const lexem_t lexem = CUR_LEX_;
         SHIFT_;
@@ -237,7 +237,7 @@ syntax_elem_t* desc_sum_    (desc_state_t* const desc_state)
 #undef OPERATION_HANDLE
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
-        case OP_TYPE_##name_: ++size_; elem = CREATE_ELEM_(lexem, elem, elem2); break;
+        case OP_TYPE_##name_: elem = CREATE_ELEM_(lexem, elem, elem2); break;
 
 syntax_elem_t* desc_mul_    (desc_state_t* const desc_state)
 {
@@ -246,7 +246,7 @@ syntax_elem_t* desc_mul_    (desc_state_t* const desc_state)
     syntax_elem_t* elem = desc_pow_(desc_state);
     CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
 
-    while (IS_MUL_ || IS_DIV_)
+    while (IS_OP_TYPE_(MUL) || IS_OP_TYPE_(DIV))
     {
         const lexem_t lexem = CUR_LEX_;
         SHIFT_;
@@ -269,7 +269,7 @@ syntax_elem_t* desc_mul_    (desc_state_t* const desc_state)
 #undef OPERATION_HANDLE
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
-        case OP_TYPE_##name_: ++size_; elem = CREATE_ELEM_(lexem, elem, elem2); break;
+        case OP_TYPE_##name_: elem = CREATE_ELEM_(lexem, elem, elem2); break;
 
 syntax_elem_t* desc_pow_    (desc_state_t* const desc_state)
 {
@@ -278,7 +278,7 @@ syntax_elem_t* desc_pow_    (desc_state_t* const desc_state)
     syntax_elem_t* elem = desc_brakets_(desc_state);
     CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
 
-    while (IS_POW_)
+    while (IS_OP_TYPE_(POW))
     {
         const lexem_t lexem = CUR_LEX_;
         SHIFT_;
@@ -304,14 +304,14 @@ syntax_elem_t* desc_brakets_(desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
 
-    if (IS_LBRAKET_)
+    if (IS_OP_TYPE_(LBRAKET))
     {
         SHIFT_;
 
         syntax_elem_t* elem = desc_sum_(desc_state);
         CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
 
-        if (!IS_RBRAKET_)
+        if (!IS_OP_TYPE_(RBRAKET))
         {
             RET_FAILURE_(syntax_elem_dtor_recursive(&elem););
         }
@@ -332,7 +332,7 @@ syntax_elem_t* desc_brakets_(desc_state_t* const desc_state)
 
 void syntaxer_dtor(syntaxer_t* const syntaxer)
 {
-    lassert(!is_invalid_ptr(syntaxer), ""); //FIXME verify
+    SYNTAXER_VERIFY(syntaxer);
 
     syntax_elem_dtor_recursive(&syntaxer->Groot);
     syntaxer->size = 0;
