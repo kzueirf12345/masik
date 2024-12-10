@@ -47,10 +47,11 @@ FLAGS += $(ADD_FLAGS)
 LIBS = -lm -L./libs/logger -llogger -L./libs/stack_on_array -lstack
 
 
-DIRS = utils flags operations lexer
+DIRS = utils flags operations lexer syntaxer syntaxer/funcs syntaxer/verification
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
-SOURCES = main.c utils/utils.c flags/flags.c operations/operations.c lexer/lexer.c
+SOURCES = main.c utils/utils.c flags/flags.c operations/operations.c lexer/lexer.c	\
+		  syntaxer/verification/verification.c syntaxer/funcs/create.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)

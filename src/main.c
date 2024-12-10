@@ -4,6 +4,7 @@
 #include "logger/liblogger.h"
 #include "flags/flags.h"
 #include "lexer/lexer.h"
+#include "syntaxer/funcs/funcs.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -27,12 +28,13 @@ int main(const int argc, char* const argv[])
                                                            lexer_dtor(&lexer);dtor_all(&flags_objs);
     );
 
-    for (size_t i = 0; i < stack_size(lexer.stack); ++i)
-    {
-        fprintf(stderr, "num: %lu\n", lexer_get(lexer, i)->data.num);
-    }
+    syntaxer_t syntaxer;
+    SYNTAX_ERROR_HANDLE(syntaxer_ctor(&syntaxer, lexer),
+                                                           lexer_dtor(&lexer);dtor_all(&flags_objs);
+    );
 
     lexer_dtor(&lexer);
+    syntaxer_dtor(&syntaxer);
     
     if (dtor_all(&flags_objs))
     {

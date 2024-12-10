@@ -86,10 +86,9 @@ enum LexerError lexing(lexer_t* const lexer, const char* const filename)
         return LEXER_ERROR_STANDARD_ERRNO;
     }
 
-    size_t line = 1;
-
     lassert(text[text_size-1] == L'\0', "");
 
+    size_t line = 1;
     for (size_t ind = 0; text[ind] != L'\0'; ++ind)
     {
         if (iswspace((wint_t)text[ind]))
@@ -126,6 +125,10 @@ enum LexerError lexing(lexer_t* const lexer, const char* const filename)
         free(text); text = NULL;
         return LEXER_ERROR_INVALID_LEXEM;
     }
+
+    LEXER_ERROR_HANDLE(
+        lexer_push(lexer, (lexem_t){.type = LEXEM_TYPE_END, .data = {}})
+    );
 
     free(text); text = NULL;
 

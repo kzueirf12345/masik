@@ -2,6 +2,7 @@
 #define MASIK_SRC_OPERATIONS_OPERATIONS_H
 
 #include <stdio.h>
+#include <wchar.h>
 
 #define OPERATION_HANDLE(num, name, ...)                                                            \
         OP_TYPE_##name = num,

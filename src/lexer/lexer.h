@@ -36,9 +36,11 @@ typedef int64_t num_t;
 
 enum LexemType
 {
+    LEXEM_TYPE_END = 0,
     LEXEM_TYPE_OP  = 1,
     LEXEM_TYPE_NUM = 2,
 };
+static_assert(LEXEM_TYPE_END == 0);
 
 typedef union LexemData
 {
