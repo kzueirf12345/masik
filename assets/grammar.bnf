@@ -1,5 +1,18 @@
-<start> ::= <sum> <END>
+<start> ::= (<statement>)+ <END>
+
+<statement> ::= (<declaration> | <expr> | <if>)? ("пж-пж")+
+
+<expr> ::= <assignment>
+<assignment> ::= <sum> ( "всего_за" <assignment> )*
 <sum> ::= <mul> (("плюсик" | "минусик") <mul>)*
 <mul> ::= <pow> (("звёздочка" | "очень_минусик") <pow>)*
 <pow> ::= <brakets> ("очень_звёздочка" <pow>)*
-<brakets> ::= ":-)" <sum> ";-)" | <NUM>
+<brakets> ::= ":-)" <expr> ";-)" | <varnum>
+<varnum> ::= <NUM> | <NAME>
+
+<declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
+
+# <if> ::= "сосать?" <condition> <body>
+# <condition> ::= "туть" <expr> "и_туть"
+# <body> ::= "сосать" (<statement>)* "кончать"
+

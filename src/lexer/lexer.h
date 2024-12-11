@@ -7,6 +7,7 @@
 
 #include "operations/operations.h"
 #include "stack_on_array/libstack.h"
+#include "utils/utils.h"
 
 enum LexerError
 {
@@ -39,15 +40,23 @@ enum LexemType
     LEXEM_TYPE_END = 0,
     LEXEM_TYPE_OP  = 1,
     LEXEM_TYPE_NUM = 2,
+    LEXEM_TYPE_VAR = 3,
 };
 static_assert(LEXEM_TYPE_END == 0);
 
 const char* lexem_type_to_str(const enum LexemType type);
 
+typedef struct VarData
+{
+    wchar_t name[VAR_NAME_MAX];
+    num_t val;
+} var_data_t;
+
 typedef union LexemData
 {
     num_t num;
     enum OpType op;
+    var_data_t var;
 } lexem_data_u;
 
 typedef struct Lexem

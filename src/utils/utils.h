@@ -36,4 +36,6 @@ int str_from_file(const char* const filename, wchar_t** str, size_t* const str_s
 
 bool isnum(const wchar_t chr);
 
+#define VAR_NAME_MAX 512
+
 #endif /*MASIK_SRC_UTILS_UTILS_H*/

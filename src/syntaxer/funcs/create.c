@@ -36,6 +36,8 @@ syntax_elem_t* syntax_elem_ctor(lexem_t lexem, syntax_elem_t* lt, syntax_elem_t*
     return elem;
 }
 
+static size_t size_ = 0;
+
 void syntax_elem_dtor(syntax_elem_t** elem)
 {
     lassert(!is_invalid_ptr(elem), "");
@@ -44,6 +46,7 @@ void syntax_elem_dtor(syntax_elem_t** elem)
 
     lassert(!is_invalid_ptr(*elem), "");
 
+    --size_; //TODO как по-другому
 
     free(*elem); *elem = NULL;
 }
@@ -63,8 +66,6 @@ void syntax_elem_dtor_recursive(syntax_elem_t** elem)
 }
 
 
-static size_t size_ = 0;
-
 typedef struct DescState
 {
     size_t ind;
@@ -74,11 +75,25 @@ typedef struct DescState
 
 #define ERROR_MSG_MAX_ 1024
 
-syntax_elem_t* desc_start_  (desc_state_t* const desc_state);
-syntax_elem_t* desc_sum_    (desc_state_t* const desc_state);
-syntax_elem_t* desc_mul_    (desc_state_t* const desc_state);
-syntax_elem_t* desc_pow_    (desc_state_t* const desc_state);
-syntax_elem_t* desc_brakets_(desc_state_t* const desc_state);
+
+syntax_elem_t* desc_start_      (desc_state_t* const desc_state);
+
+syntax_elem_t* desc_statement_  (desc_state_t* const desc_state);
+
+syntax_elem_t* desc_expr_       (desc_state_t* const desc_state);
+syntax_elem_t* desc_assignment_ (desc_state_t* const desc_state);
+syntax_elem_t* desc_sum_        (desc_state_t* const desc_state);
+syntax_elem_t* desc_mul_        (desc_state_t* const desc_state);
+syntax_elem_t* desc_pow_        (desc_state_t* const desc_state);
+syntax_elem_t* desc_brakets_    (desc_state_t* const desc_state);
+syntax_elem_t* desc_varnum_     (desc_state_t* const desc_state);
+
+syntax_elem_t* desc_declaration_(desc_state_t* const desc_state);
+
+// syntax_elem_t* desc_if_         (desc_state_t* const desc_state);
+// syntax_elem_t* desc_condition_  (desc_state_t* const desc_state);
+// syntax_elem_t* desc_body_       (desc_state_t* const desc_state);
+
 
 enum SyntaxError output_errors_(desc_state_t desc_state);
 
@@ -168,6 +183,7 @@ enum SyntaxError output_errors_(desc_state_t desc_state)
 
 #define IS_OP_  (CUR_LEX_.type == LEXEM_TYPE_OP)
 #define IS_NUM_ (CUR_LEX_.type == LEXEM_TYPE_NUM)
+#define IS_VAR_ (CUR_LEX_.type == LEXEM_TYPE_VAR)
 
 // #define DEF_OPERATION_HANDLE
 
@@ -189,11 +205,31 @@ enum SyntaxError output_errors_(desc_state_t desc_state)
 // #define IS_LBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_LBRAKET)
 // #define IS_RBRAKET_ (IS_OP_ && CUR_LEX_.data.op == OP_TYPE_RBRAKET)
 
+// #define ARG_WITH_COMMA(...) __VA_ARGS__
+
 syntax_elem_t* desc_start_  (desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
     
-    syntax_elem_t* elem = desc_sum_(desc_state);
+    syntax_elem_t* elem = desc_statement_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    size_t old_ind = CUR_IND_;
+
+    syntax_elem_t* elem2 = desc_statement_(desc_state);
+
+    while (!IS_FAILURE_)
+    {
+        const lexem_t lexem = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
+        elem = CREATE_ELEM_(lexem, elem, elem2);
+
+        old_ind = CUR_IND_;
+
+        elem2 = desc_statement_(desc_state);
+    }
+    RESET_ERRORS_;
+    CUR_IND_ = old_ind;
+    syntax_elem_dtor_recursive(&elem2);
 
     if (CUR_LEX_.type != LEXEM_TYPE_END)
     {
@@ -204,11 +240,93 @@ syntax_elem_t* desc_start_  (desc_state_t* const desc_state)
     return elem;
 }
 
+syntax_elem_t* desc_statement_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    size_t old_ind = CUR_IND_;
+
+    syntax_elem_t* elem = desc_declaration_(desc_state);
+
+    if (IS_FAILURE_)
+    {
+        RESET_ERRORS_;
+        CUR_IND_ = old_ind;
+        syntax_elem_dtor_recursive(&elem);
+
+        elem = desc_expr_(desc_state);
+
+        if (IS_FAILURE_)
+        {
+            RESET_ERRORS_;
+            CUR_IND_ = old_ind;
+            syntax_elem_dtor_recursive(&elem);
+        }
+    }
+
+    bool is_please = false;
+
+    while (IS_OP_TYPE_(PLEASE))
+    {
+        is_please = true;
+        SHIFT_;
+    }
+
+    if (!is_please)
+    {
+        RET_FAILURE_(syntax_elem_dtor_recursive(&elem););
+    }
+
+    return elem;
+}
+
+syntax_elem_t* desc_expr_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    syntax_elem_t* elem = desc_assignment_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    return elem;
+}
+
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
         case OP_TYPE_##name_: elem = CREATE_ELEM_(lexem, elem, elem2); break;
 
-syntax_elem_t* desc_sum_    (desc_state_t* const desc_state)
+syntax_elem_t* desc_assignment_(desc_state_t* const desc_state)
 {
+    CHECK_ERROR_();
+
+    syntax_elem_t* elem = desc_sum_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    while (IS_OP_TYPE_(ASSIGNMENT) || IS_OP_TYPE_(DECL_ASSIGNMENT))
+    {
+        lexem_t lexem = CUR_LEX_;
+        lexem.data.op = OP_TYPE_ASSIGNMENT;
+        SHIFT_;
+
+        syntax_elem_t* elem2 = desc_assignment_(desc_state);
+        CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+        switch(lexem.data.op)
+        {
+            #include "operations/codegen.h"
+
+            case OP_TYPE_UNKNOWN:
+            default:
+                RET_FAILURE_(syntax_elem_dtor_recursive(&elem); syntax_elem_dtor_recursive(&elem2););
+        }
+    }
+
+    return elem;
+}
+#undef OPERATION_HANDLE
+
+#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
+        case OP_TYPE_##name_: elem = CREATE_ELEM_(lexem, elem, elem2); break;
+
+syntax_elem_t* desc_sum_(desc_state_t* const desc_state) {
     CHECK_ERROR_();
     
     syntax_elem_t* elem = desc_mul_(desc_state);
@@ -308,7 +426,7 @@ syntax_elem_t* desc_brakets_(desc_state_t* const desc_state)
     {
         SHIFT_;
 
-        syntax_elem_t* elem = desc_sum_(desc_state);
+        syntax_elem_t* elem = desc_expr_(desc_state);
         CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
 
         if (!IS_OP_TYPE_(RBRAKET))
@@ -320,14 +438,59 @@ syntax_elem_t* desc_brakets_(desc_state_t* const desc_state)
         return elem;
     }
 
-    if (!IS_NUM_)
+    syntax_elem_t* elem = desc_varnum_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    return elem;
+}
+
+syntax_elem_t* desc_varnum_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_VAR_ && !IS_NUM_)
     {
         RET_FAILURE_();
     }
+
     syntax_elem_t* elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
     SHIFT_;
 
     return elem;
+}
+
+syntax_elem_t* desc_declaration_(desc_state_t* const desc_state) 
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(DECL_FLAG))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    if (!IS_VAR_)
+    {
+        RET_FAILURE_();
+    }
+    syntax_elem_t* elem_lt = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+    SHIFT_;
+
+    const lexem_t lexem_zero = {.type = LEXEM_TYPE_NUM, .data = {.num = 0}};
+    syntax_elem_t* elem_rt = CREATE_ELEM_(lexem_zero, NULL, NULL);
+
+    lexem_t lexem = CUR_LEX_;
+    lexem.data.op = OP_TYPE_DECL_ASSIGNMENT;
+    if (IS_OP_TYPE_(ASSIGNMENT) || IS_OP_TYPE_(DECL_ASSIGNMENT))
+    {
+        SHIFT_;
+
+        syntax_elem_dtor_recursive(&elem_rt);
+        elem_rt = desc_expr_(desc_state);
+        CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt); syntax_elem_dtor_recursive(&elem_rt););
+    }
+
+    return CREATE_ELEM_(lexem, elem_lt, elem_rt);
 }
 
 void syntaxer_dtor(syntaxer_t* const syntaxer)
