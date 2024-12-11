@@ -17,3 +17,4 @@ OPERATION_HANDLE(12,    LBODY,              L"сосать"           ) //NOTE -
 OPERATION_HANDLE(13,    RBODY,              L"кончать"          )
 OPERATION_HANDLE(14,    COND_LBRAKET,       L"туть"             )
 OPERATION_HANDLE(15,    COND_RBRAKET,       L"и_туть"           )
+OPERATION_HANDLE(16,    WHILE,              L"много_сосать?"    )

@@ -1,6 +1,6 @@
 <start> ::= (<statement>)+ <END>
 
-<statement> ::= <if> | ((<declaration> | <expr>)? ("пж-пж")+)
+<statement> ::= <if> | <while> | ((<declaration> | <expr>)? ("пж-пж")+)
 
 <expr> ::= <assignment>
 <assignment> ::= <sum> ( "всего_за" <assignment> )*
@@ -13,6 +13,8 @@
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
 
 <if> ::= "сосать?" <condition> <body>
+<while> ::= "много_сосать?" <condition> <body>
+
 <condition> ::= "туть" <expr> "и_туть"
 <body> ::= "сосать" (<statement>)* "кончать"
 

@@ -33,13 +33,6 @@ int main(const int argc, char* const argv[])
                                                            lexer_dtor(&lexer);dtor_all(&flags_objs);
     );
 
-    // syntaxer_t syntaxer;
-    // syntaxer.Groot = syntax_elem_ctor((lexem_t){.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_SUM}},
-    //                     syntax_elem_ctor((lexem_t){.type = LEXEM_TYPE_NUM, .data = {.num = 1}}, NULL, NULL),
-    //                     syntax_elem_ctor((lexem_t){.type = LEXEM_TYPE_NUM, .data = {.num = 2}}, NULL, NULL)
-    // );
-    // syntaxer.size = 3;
-
     syntaxer_dumb(&syntaxer);
 
     lexer_dtor(&lexer);
