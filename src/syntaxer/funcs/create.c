@@ -90,9 +90,9 @@ syntax_elem_t* desc_varnum_     (desc_state_t* const desc_state);
 
 syntax_elem_t* desc_declaration_(desc_state_t* const desc_state);
 
-// syntax_elem_t* desc_if_         (desc_state_t* const desc_state);
-// syntax_elem_t* desc_condition_  (desc_state_t* const desc_state);
-// syntax_elem_t* desc_body_       (desc_state_t* const desc_state);
+syntax_elem_t* desc_if_         (desc_state_t* const desc_state);
+syntax_elem_t* desc_condition_  (desc_state_t* const desc_state);
+syntax_elem_t* desc_body_       (desc_state_t* const desc_state);
 
 
 enum SyntaxError output_errors_(desc_state_t desc_state);
@@ -167,7 +167,8 @@ enum SyntaxError output_errors_(desc_state_t desc_state)
     do {                                                                                            \
         __VA_ARGS__                                                                                 \
         char error_msg[ERROR_MSG_MAX_] = {};                                                        \
-        snprintf(error_msg, ERROR_MSG_MAX_, "Can't %s line: %d\n", __func__, __LINE__);             \
+        snprintf(error_msg, ERROR_MSG_MAX_, "Can't %s ind: %zu line: %d\n",                         \
+                 __func__, CUR_IND_, __LINE__);                                                     \
         STACK_ERROR_HANDLE_(stack_push(&desc_state->errors, error_msg));                            \
         return NULL;                                                                                \
     } while(0)
@@ -246,7 +247,21 @@ syntax_elem_t* desc_statement_(desc_state_t* const desc_state)
 
     size_t old_ind = CUR_IND_;
 
-    syntax_elem_t* elem = desc_declaration_(desc_state);
+    syntax_elem_t* elem = desc_if_(desc_state);
+
+    if (!IS_FAILURE_)
+    {
+        return elem;
+    }
+    RESET_ERRORS_;
+    CUR_IND_ = old_ind;
+    syntax_elem_dtor_recursive(&elem);
+
+    // not if
+
+    old_ind = CUR_IND_;
+
+    elem = desc_declaration_(desc_state);
 
     if (IS_FAILURE_)
     {
@@ -491,6 +506,93 @@ syntax_elem_t* desc_declaration_(desc_state_t* const desc_state)
     }
 
     return CREATE_ELEM_(lexem, elem_lt, elem_rt);
+}
+
+syntax_elem_t* desc_if_         (desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(IF))
+    {
+        RET_FAILURE_();
+    }
+    lexem_t lexem_if = CUR_LEX_;
+    SHIFT_;
+
+    syntax_elem_t* elem_lt = desc_condition_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt););
+
+    syntax_elem_t* elem_rt = desc_body_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt); syntax_elem_dtor_recursive(&elem_rt););
+
+    return CREATE_ELEM_(lexem_if, elem_lt, elem_rt);
+}
+
+syntax_elem_t* desc_condition_  (desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(COND_LBRAKET))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    syntax_elem_t* elem = desc_expr_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    if (!IS_OP_TYPE_(COND_RBRAKET))
+    {
+        RET_FAILURE_(syntax_elem_dtor_recursive(&elem););
+    }
+    SHIFT_;
+
+    return elem;
+}
+syntax_elem_t* desc_body_       (desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(LBODY))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    size_t old_ind = CUR_IND_;
+    syntax_elem_t* elem = desc_statement_(desc_state);
+
+    if (IS_FAILURE_)
+    {
+        syntax_elem_dtor_recursive(&elem);
+    }
+    else
+    {
+        const lexem_t lexem = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
+
+        old_ind = CUR_IND_;
+        syntax_elem_t* elem2 = desc_statement_(desc_state);
+
+        while (!IS_FAILURE_)
+        {
+            elem = CREATE_ELEM_(lexem, elem, elem2);
+
+            old_ind = CUR_IND_;
+            elem2 = desc_statement_(desc_state);
+        }
+        syntax_elem_dtor_recursive(&elem2);
+    }
+    RESET_ERRORS_;
+    CUR_IND_ = old_ind;
+
+
+    if (!IS_OP_TYPE_(RBODY))
+    {
+        RET_FAILURE_(syntax_elem_dtor_recursive(&elem););
+    }
+    SHIFT_;
+
+    return elem;
 }
 
 void syntaxer_dtor(syntaxer_t* const syntaxer)
