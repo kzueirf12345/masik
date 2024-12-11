@@ -1,9 +1,26 @@
 <start> ::= (<statement>)+ <END>
 
-<statement> ::= <if> | <while> | ((<declaration> | <expr>)? ("пж-пж")+)
+<statement> ::= <if> | <while> 
+             | ((<declaration> | <expr>)? ("пж-пж")+)
 
 <expr> ::= <assignment>
-<assignment> ::= <sum> ( "всего_за" <assignment> )*
+<assignment> ::=  <compare_eq> 
+    ( 
+        ("всего_за" 
+        |       "подороже" |       "подешевле" 
+        | "очень_подороже" | "очень_подешевле" 
+        |       "подороже_что_пиздец"
+        ) 
+        <assignment> 
+    )*
+<compare_eq> ::= <compare> (("близняшки" | "какашки") <compare>)*
+<compare> ::= <sum> 
+    (
+        (    "тут_дороже:--" |    "тут_мб_дороже:--" 
+        | "--:тут_дороже"    | "--:тут_мб_дороже"
+        ) 
+        <sum>
+    )*
 <sum> ::= <mul> (("плюсик" | "минусик") <mul>)*
 <mul> ::= <pow> (("звёздочка" | "очень_минусик") <pow>)*
 <pow> ::= <brakets> ("очень_звёздочка" <pow>)*
@@ -12,9 +29,10 @@
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
 
-<if> ::= "сосать?" <condition> <body>
-<while> ::= "много_сосать?" <condition> <body>
+<if> ::= "сосать?" <condition> <body> # (<else>)?
+<while> ::= "много_сосать?" <condition> <body> # (<else>)?
 
+# <else> ::= "не_сосать?" <body>
 <condition> ::= "туть" <expr> "и_туть"
 <body> ::= "сосать" (<statement>)* "кончать"
 
