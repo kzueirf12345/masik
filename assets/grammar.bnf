@@ -29,10 +29,10 @@
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
 
-<if> ::= "сосать?" <condition> <body> # (<else>)?
-<while> ::= "много_сосать?" <condition> <body> # (<else>)?
+<if> ::= "сосать?" <condition> <body> (<else>)?
+<while> ::= "много_сосать?" <condition> <body> (<else>)?
 
-# <else> ::= "не_сосать?" <body>
+<else> ::= "не_сосать?" <body>
 <condition> ::= "туть" <expr> "и_туть"
 <body> ::= "сосать" (<statement>)* "кончать"
 

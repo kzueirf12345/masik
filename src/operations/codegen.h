@@ -29,5 +29,4 @@ OPERATION_HANDLE(24,    LESS,               L"тут_дороже:--"        )
 OPERATION_HANDLE(25,    LESSEQ,             L"тут_мб_дороже:--"     )
 OPERATION_HANDLE(26,    GREAT,              L"--:тут_дороже"        )
 OPERATION_HANDLE(27,    GREATEQ,            L"--:тут_мб_дороже"     )
-
-// OPERATION_HANDLE(17,    ELSE,               L"не_сосать?"       )
+OPERATION_HANDLE(28,    ELSE,               L"не_сосать?"           )

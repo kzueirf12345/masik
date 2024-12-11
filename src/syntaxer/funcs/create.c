@@ -95,7 +95,7 @@ syntax_elem_t* desc_declaration_(desc_state_t* const desc_state);
 syntax_elem_t* desc_if_         (desc_state_t* const desc_state);
 syntax_elem_t* desc_while_      (desc_state_t* const desc_state);
 
-// syntax_elem_t* desc_else_       (desc_state_t* const desc_state);
+syntax_elem_t* desc_else_       (desc_state_t* const desc_state);
 syntax_elem_t* desc_condition_  (desc_state_t* const desc_state);
 syntax_elem_t* desc_body_       (desc_state_t* const desc_state);
 
@@ -606,33 +606,78 @@ syntax_elem_t* desc_if_         (desc_state_t* const desc_state)
     lexem_t lexem_if = CUR_LEX_;
     SHIFT_;
 
-    syntax_elem_t* elem_lt = desc_condition_(desc_state);
-    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt););
+    syntax_elem_t* elem_cond = desc_condition_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_cond););
 
-    syntax_elem_t* elem_rt = desc_body_(desc_state);
-    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt); syntax_elem_dtor_recursive(&elem_rt););
+    syntax_elem_t* elem_if_body = desc_body_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_if_body); syntax_elem_dtor_recursive(&elem_cond););
 
-    return CREATE_ELEM_(lexem_if, elem_lt, elem_rt);
+    size_t old_ind = CUR_IND_;
+
+    syntax_elem_t* elem_else_body = desc_else_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RESET_ERRORS_;
+        CUR_IND_ = old_ind;
+        syntax_elem_dtor_recursive(&elem_else_body);
+    }
+
+    lexem_t lexem_else = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_ELSE}};
+
+    return CREATE_ELEM_(lexem_if, 
+                            elem_cond, 
+                            CREATE_ELEM_(lexem_else, elem_if_body, elem_else_body));
 }
 
 syntax_elem_t* desc_while_      (desc_state_t* const desc_state)
 {
-    CHECK_ERROR_();
+CHECK_ERROR_();
 
     if (!IS_OP_TYPE_(WHILE))
     {
         RET_FAILURE_();
     }
-    lexem_t lexem_if = CUR_LEX_;
+    lexem_t lexem_while = CUR_LEX_;
     SHIFT_;
 
-    syntax_elem_t* elem_lt = desc_condition_(desc_state);
-    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt););
+    syntax_elem_t* elem_cond = desc_condition_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_cond););
 
-    syntax_elem_t* elem_rt = desc_body_(desc_state);
-    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_lt); syntax_elem_dtor_recursive(&elem_rt););
+    syntax_elem_t* elem_while_body = desc_body_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem_while_body); 
+                 syntax_elem_dtor_recursive(&elem_cond););
 
-    return CREATE_ELEM_(lexem_if, elem_lt, elem_rt);
+    size_t old_ind = CUR_IND_;
+
+    syntax_elem_t* elem_else_body = desc_else_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RESET_ERRORS_;
+        CUR_IND_ = old_ind;
+        syntax_elem_dtor_recursive(&elem_else_body);
+    }
+
+    lexem_t lexem_else = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_ELSE}};
+
+    return CREATE_ELEM_(lexem_while, 
+                            elem_cond, 
+                            CREATE_ELEM_(lexem_else, elem_while_body, elem_else_body));
+}
+
+syntax_elem_t* desc_else_       (desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(ELSE))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    syntax_elem_t* elem = desc_body_(desc_state);
+    CHECK_ERROR_(syntax_elem_dtor_recursive(&elem););
+
+    return elem;
 }
 
 syntax_elem_t* desc_condition_  (desc_state_t* const desc_state)
