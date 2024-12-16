@@ -1,13 +1,14 @@
 .PHONY: all build clean rebuild \
 		logger_build logger_clean logger_rebuild \
 		stack_build stack_clean stack_rebuild	\
-		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin
-# precompile
+		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
+		frontend_all frontend_build frontend_clean frontend_rebuild frontend_start \
+		backend_all backend_build backend_clean backend_rebuild backend_start
 
 PROJECT_NAME = masik
 
 BUILD_DIR = ./build
-SRC_DIR = ./src
+SRC_DIR = ./utils
 COMPILER = gcc
 
 DEBUG_ ?= 1
@@ -45,83 +46,77 @@ endif
 
 FLAGS += $(ADD_FLAGS)
 
-LIBS = -lm -L./libs/logger -llogger -L./libs/stack_on_array -lstack
+
+all:  libs_build frontend_all midlend_all backend_all
+
+build: libs_build frontend_build midlend_build backend_build
+
+start: frontend_start midlend_start backend_start
+
+rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild
 
 
-DIRS = utils flags operations lexer syntaxer syntaxer/funcs syntaxer/verification
-BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
+frontend_all: frontend_build frontend_start
 
-SOURCES = main.c utils/utils.c flags/flags.c operations/operations.c lexer/lexer.c	\
-		  syntaxer/verification/verification.c syntaxer/funcs/create.c syntaxer/verification/dumb.c
+frontend_start:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(FOPTS)" start -C ./frontend/
 
-SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
-OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
-DEPS_REL_PATH = $(OBJECTS_REL_PATH:%.o=%.d)
+frontend_rebuild: frontend_clean frontend_build
 
-
-all: build start
-
-start:
-	./$(PROJECT_NAME).out $(OPTS)
-
-build: $(PROJECT_NAME).out
-
-rebuild: clean_all build
+frontend_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./frontend/
 
 
+midlend_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./midlend/
 
-$(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
-	@$(COMPILER) $(FLAGS) -o $@ $^  $(LIBS)
+midlend_all: midlend_build midlend_start
 
-$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c | ./$(BUILD_DIR)/ $(BUILD_DIRS) logger_build stack_build # precompile
-	@$(COMPILER) $(FLAGS) -I$(SRC_DIR) -I./libs -c -MMD -MP $< -o $@
+midlend_start:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(MOPTS)" start -C ./midlend/
 
--include $(DEPS_REL_PATH)
+midlend_rebuild: midlend_clean midlend_build
 
-$(BUILD_DIRS):
-	mkdir $@
-./$(BUILD_DIR)/:
-	mkdir $@
+midlend_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./midlend/
 
-# precompile : 
-# 	$(COMPILER) -I$(SRC_DIR) -I./libs -E $(SOURCES_REL_PATH)
-
-
-logger_rebuild: logger_build logger_clean
-
-logger_build:
-	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger
-
-logger_clean:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger
-
-stack_rebuild: stack_build stack_clean
-
-stack_build:
-	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array
-
-stack_clean:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array
+midlend_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./midlend/
 
 
-clean_all: clean_obj clean_deps clean_out logger_clean stack_clean
+backend_all: backend_build backend_start
 
-clean: clean_obj clean_deps clean_out
+backend_start:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(BOPTS)" start -C ./backend/
 
-clean_log:
-	rm -rf ./log/*
+backend_rebuild: backend_clean backend_build
 
-clean_out:
-	rm -rf ./*.out
+backend_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./backend/
 
-clean_obj:
-	rm -rf ./$(OBJECTS_REL_PATH)
+backend_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./backend/
 
-clean_deps:
-	rm -rf ./$(DEPS_REL_PATH)
 
-clean_txt:
-	rm -rf ./*.txt
+libs_rebuild: libs_clean libs_build
 
-clean_bin:
-	rm -rf ./*.bin
+libs_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array/ && \
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger/ && \
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./utils/
+
+libs_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/stack_on_array/ && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger/ && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/
+
+
+clean: libs_clean frontend_clean midlend_clean backend_clean
+
+clean_all:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/logger         && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./utils/ && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./frontend/          && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./midlend/          && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./backend/  
