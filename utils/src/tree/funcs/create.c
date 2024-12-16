@@ -64,6 +64,11 @@ void tree_elem_dtor_recursive(tree_elem_t** elem)
     tree_elem_dtor(elem);
 }
 
+
+static size_t size_ = 0;
+
+tree_elem_t* tree_ctor_recursive_(wchar_t** token, wchar_t** buffer);
+
 enum TreeError tree_ctor(tree_t* tree, const char* const filename)
 {
     TREE_VERIFY(tree);
@@ -77,12 +82,117 @@ enum TreeError tree_ctor(tree_t* tree, const char* const filename)
         return TREE_ERROR_STANDARD_ERRNO;
     }
 
-    lassert(text[text_size-1] == L'\0', "");
+    lassert(text[text_size-1] == L' ', "last symbol: '%lc'", (wint_t)text[text_size-1]);
 
-    //TODO implement
+    wchar_t* buffer = NULL;
+    wchar_t* token = wcstok(text, L" ", &buffer);
+
+    size_ = 0;
+    tree->Groot = tree_ctor_recursive_(&token, &buffer);
+    tree->size = size_;
+
+    lassert(token == NULL, "");
+    
+    free(text); text = NULL;
 
     return TREE_ERROR_SUCCESS;
 }
+
+lexem_t tree_ctor_lexem_(wchar_t** token, wchar_t** buffer);
+
+#define NEXT_TOKEN_                                                                                 \
+    do {                                                                                            \
+        if (!*token) {fprintf(stderr, "Incorrect tree in file\n"); return NULL;}                    \
+        *token = wcstok(NULL, L" ", buffer);                                                        \
+    } while (0)
+
+tree_elem_t* tree_ctor_recursive_(wchar_t** token, wchar_t** buffer)
+{
+    lassert(!is_invalid_ptr(buffer), "");
+    lassert(!is_invalid_ptr(token), "");
+    lassert(!is_invalid_ptr(*token), "");
+
+    ++size_;
+
+    lexem_t lexem = tree_ctor_lexem_(token, buffer);
+    // fprintf(stderr, "token: %ls\n", token);
+    
+    size_t count = 0;
+    swscanf(*token, L"%zu ", &count);
+    NEXT_TOKEN_;
+
+    tree_elem_t* lt = NULL;
+    tree_elem_t* rt = NULL;
+
+    if (count > 0)
+    {
+        lt = tree_ctor_recursive_(token, buffer);
+        if (!lt)
+        {
+            return NULL;
+        }
+    }
+    
+    if (count > 1)
+    {
+        rt = tree_ctor_recursive_(token, buffer);
+        if (!rt)
+        {
+            tree_elem_dtor_recursive(&lt);
+            return NULL;
+        }
+    }
+    return tree_elem_ctor(lexem, lt, rt);
+}
+
+#undef NEXT_TOKEN_
+#define NEXT_TOKEN_                                                                                 \
+    do {                                                                                            \
+        if (!*token) {fprintf(stderr, "Incorrect tree in file\n"); return lexem;}                   \
+        *token = wcstok(NULL, L" ", buffer);                                                        \
+    } while (0)
+
+lexem_t tree_ctor_lexem_(wchar_t** token, wchar_t** buffer)
+{
+    lassert(!is_invalid_ptr(buffer), "");
+    lassert(!is_invalid_ptr(token), "");
+    lassert(!is_invalid_ptr(*token), "");
+
+    lexem_t lexem = {};
+
+    swscanf(*token, L"%d", &lexem.type);
+    NEXT_TOKEN_;
+    
+    switch (lexem.type)
+    {
+    case LEXEM_TYPE_OP:
+    {
+        swscanf(*token, L"%d", &lexem.data.op);
+        break;
+    }
+
+    case LEXEM_TYPE_NUM:
+    {
+        swscanf(*token, L"%ld", &lexem.data.num);
+        break;
+    }
+
+    case LEXEM_TYPE_VAR:
+    {
+        swscanf(*token, L"%zu", &lexem.data.var);
+        break;
+    }
+    
+    case LEXEM_TYPE_END:
+    default:
+        return lexem;
+    }
+
+    NEXT_TOKEN_;
+    return lexem;
+}
+
+
 
 void tree_dtor(tree_t* const tree)
 {
@@ -100,7 +210,11 @@ enum TreeError tree_print(const tree_t tree, FILE* out)
     TREE_VERIFY(&tree);
     lassert(!is_invalid_ptr(out), "");
 
-    return tree_print_recursive_(tree.Groot, out);
+    TREE_ERROR_HANDLE(tree_print_recursive_(tree.Groot, out));
+
+    // fprintf(out, "");
+
+    return TREE_ERROR_SUCCESS;
 }
 
 enum TreeError tree_print_recursive_(const tree_elem_t* elem, FILE* out)
@@ -111,6 +225,9 @@ enum TreeError tree_print_recursive_(const tree_elem_t* elem, FILE* out)
     lassert(!is_invalid_ptr(out), "");
     
     TREE_ERROR_HANDLE(tree_print_lexem_(elem->lexem, out));
+
+    size_t count = (size_t)(elem->lt != NULL) + (size_t)(elem->rt != NULL);
+    fprintf(out, "%zu ", count);
 
     TREE_ERROR_HANDLE(tree_print_recursive_(elem->lt, out));
     TREE_ERROR_HANDLE(tree_print_recursive_(elem->rt, out));
@@ -126,11 +243,6 @@ enum TreeError tree_print_lexem_(const lexem_t lexem, FILE* out)
 
     switch (lexem.type)
     {
-    case LEXEM_TYPE_END:
-    {
-        fprintf(out, "%ld ", lexem.data.num); // for simplify read
-        break;
-    }
 
     case LEXEM_TYPE_OP:
     {
@@ -150,6 +262,7 @@ enum TreeError tree_print_lexem_(const lexem_t lexem, FILE* out)
         break;
     }
     
+    case LEXEM_TYPE_END:
     default:
         return TREE_ERROR_INVALID_OP_TYPE;
     }

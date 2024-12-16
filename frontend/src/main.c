@@ -38,7 +38,7 @@ int main(const int argc, char* const argv[])
 
     // tree_dumb(&syntaxer);
 
-    TREE_ERROR_HANDLE(tree_print(syntaxer, stdout),
+    TREE_ERROR_HANDLE(tree_print(syntaxer, flags_objs.out),
                                       lexer_dtor(&lexer);dtor_all(&flags_objs);tree_dtor(&syntaxer);
     );
 

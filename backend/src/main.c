@@ -9,10 +9,32 @@
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
 
-int main()
+int main(const int argc, char* const argv[])
 {
     fprintf(stderr, GREEN_TEXT("Hello backend\n"));
-    return 0;
+
+    flags_objs_t flags_objs = {};
+
+    if (init_all(&flags_objs, argc, argv))
+    {
+        fprintf(stderr, "Can't init all\n");
+        return EXIT_FAILURE;
+    }
+
+    tree_t tree = {};
+    TREE_ERROR_HANDLE(tree_ctor(&tree, flags_objs.in_filename),
+                                                                              dtor_all(&flags_objs);
+    );
+
+    tree_dtor(&tree);
+    
+    if (dtor_all(&flags_objs))
+    {
+        fprintf(stderr, "Can't dtor all\n");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 int logger_init(char* const log_folder);

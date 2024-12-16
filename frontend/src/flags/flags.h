@@ -29,6 +29,9 @@ typedef struct FlagsObjs
     char log_folder [FILENAME_MAX];
 
     char in_filename[FILENAME_MAX];
+    char out_filename[FILENAME_MAX];
+
+    FILE* out;
 
 } flags_objs_t;
 

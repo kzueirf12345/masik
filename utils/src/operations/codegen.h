@@ -1,6 +1,6 @@
 /*eslint-disable*/
 
-//               num    name                keyword
+//               num    name                keyword           count_op
 OPERATION_HANDLE(0,     SUM,                L"плюсик"               )
 OPERATION_HANDLE(1,     SUB,                L"минусик"              )
 OPERATION_HANDLE(2,     MUL,                L"звёздочка"            )
