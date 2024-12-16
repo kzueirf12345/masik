@@ -58,7 +58,8 @@ dkms.conf
 
 *.log
 CMakePresets.json
-log/*
+*.html
+*.svg
 
 dumb_graph_count.txt
 dumb.dot

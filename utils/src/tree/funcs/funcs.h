@@ -10,6 +10,9 @@ tree_elem_t*   tree_elem_ctor(lexem_t lexem, tree_elem_t* lt, tree_elem_t* rt);
 void           tree_elem_dtor          (tree_elem_t** elem);
 void           tree_elem_dtor_recursive(tree_elem_t** elem);
 
-void           tree_dtor(tree_t* const syntaxer);
+enum TreeError tree_ctor(tree_t* tree, const char* const filename);
+void           tree_dtor(tree_t* const tree);
+
+enum TreeError tree_print(const tree_t tree, FILE* out);
 
 #endif /* MASIK_UTILS_SRC_TREE_FUNCS_FUNCS_H */

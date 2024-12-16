@@ -36,7 +36,11 @@ int main(const int argc, char* const argv[])
                                                            lexer_dtor(&lexer);dtor_all(&flags_objs);
     );
 
-    tree_dumb(&syntaxer);
+    // tree_dumb(&syntaxer);
+
+    TREE_ERROR_HANDLE(tree_print(syntaxer, stdout),
+                                      lexer_dtor(&lexer);dtor_all(&flags_objs);tree_dtor(&syntaxer);
+    );
 
     lexer_dtor(&lexer);
     tree_dtor(&syntaxer);

@@ -19,17 +19,12 @@ enum LexemType
 };
 static_assert(LEXEM_TYPE_END == 0);
 
-typedef struct VarData
-{
-    wchar_t name[VAR_NAME_MAX];
-    num_t val;
-} var_data_t;
 
 typedef union LexemData
 {
     num_t num;
     enum OpType op;
-    var_data_t var;
+    size_t var;
 } lexem_data_u;
 
 typedef struct Lexem

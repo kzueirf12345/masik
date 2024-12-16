@@ -21,21 +21,6 @@
         }                                                                                           \
     } while(0)
 
-
-const char* lexem_type_to_str(const enum LexemType type)
-{
-    switch (type)
-    {
-        case LEXEM_TYPE_NUM: return "NUM";
-        case LEXEM_TYPE_OP:  return "OP";
-        case LEXEM_TYPE_VAR: return "VAR";
-        case LEXEM_TYPE_END: return "END";
-    default:
-        return "UNKNOWN_LEXEM_TYPE";
-    }
-    return "UNKNOWN_LEXEM_TYPE";
-}
-
 #define START_CAPACITY_ 256
 enum LexerError lexer_ctor(lexer_t* const lexer)
 {
@@ -76,6 +61,8 @@ static enum LexerError handle_var_(lexer_t* const lexer, const wchar_t* const te
 static enum LexerError handle_op_ (lexer_t* const lexer,                            size_t* const ind,
                                    const enum OpType op);
 
+static stack_key_t stack = 0;
+
 enum LexerError lexing(lexer_t* const lexer, const char* const filename)
 {
     lassert(!is_invalid_ptr(lexer), "");
@@ -91,6 +78,8 @@ enum LexerError lexing(lexer_t* const lexer, const char* const filename)
 
     lassert(text[text_size-1] == L'\0', "");
 
+    STACK_ERROR_HANDLE_(STACK_CTOR(&stack, VAR_NAME_MAX * sizeof(wchar_t), 10));
+
     size_t line = 1;
     for (size_t ind = 0; text[ind] != L'\0'; ++ind)
     {
@@ -102,26 +91,27 @@ enum LexerError lexing(lexer_t* const lexer, const char* const filename)
 
         if (iswdigit((wint_t)text[ind]))
         {
-            LEXER_ERROR_HANDLE(handle_num_(lexer, text, &ind), free(text););
+            LEXER_ERROR_HANDLE(handle_num_(lexer, text, &ind), free(text);stack_dtor(&stack););
             continue;
         }
 
         enum OpType op = OP_TYPE_UNKNOWN;
         if ((op = find_op(text + ind)) != OP_TYPE_UNKNOWN)
         {
-            LEXER_ERROR_HANDLE(handle_op_(lexer, &ind, op), free(text););
+            LEXER_ERROR_HANDLE(handle_op_(lexer, &ind, op), free(text);stack_dtor(&stack););
             continue;
         }
 
-        LEXER_ERROR_HANDLE(handle_var_(lexer, text, &ind), free(text););
+        LEXER_ERROR_HANDLE(handle_var_(lexer, text, &ind), free(text);stack_dtor(&stack););
     }
 
     LEXER_ERROR_HANDLE(
         lexer_push(lexer, (lexem_t){.type = LEXEM_TYPE_END, .data = {}}), 
-        free(text);
+        free(text);stack_dtor(&stack);
     );
 
     free(text); text = NULL;
+    stack_dtor(&stack);
 
     return LEXER_ERROR_SUCCESS;
 }
@@ -149,15 +139,18 @@ static enum LexerError handle_var_(lexer_t* const lexer, const wchar_t* const te
     lassert(!is_invalid_ptr(text),  "");
     lassert(!is_invalid_ptr(ind),   "");
 
-    lexem_t lexem = {.type = LEXEM_TYPE_VAR, .data = {.var = {.val = 0, .name = {}}}};
+    wchar_t name[VAR_NAME_MAX] = {};
 
     for (const size_t old_ind = *ind; 
          *ind - old_ind < VAR_NAME_MAX && !iswspace((wint_t)text[*ind]) && text[*ind] != L'\0';
          ++*ind)
     {
-        lexem.data.var.name[*ind - old_ind] = text[*ind];
+        name[*ind - old_ind] = text[*ind];
     }
+
+    const lexem_t lexem = {.type = LEXEM_TYPE_VAR, .data = {.var = stack_find_push(&stack, name)}};
     LEXER_ERROR_HANDLE(lexer_push(lexer, lexem));
+
     --*ind;
 
     return LEXER_ERROR_SUCCESS;
