@@ -15,6 +15,8 @@ enum OpType
 
 #undef OPERATION_HANDLE
 
+const char* op_type_to_str(const enum OpType type);
+
 typedef struct Operation
 {
     const enum OpType type;

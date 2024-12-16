@@ -23,8 +23,8 @@
     )*
 <sum> ::= <mul> (("плюсик" | "минусик") <mul>)*
 <mul> ::= <pow> (("звёздочка" | "очень_минусик") <pow>)*
-<pow> ::= <brakets> ("очень_звёздочка" <pow>)*
-<brakets> ::= ":-)" <expr> ";-)" | <varnum>
+<pow> ::= <brackets> ("очень_звёздочка" <pow>)*
+<brackets> ::= ":-)" <expr> ";-)" | <varnum>
 <varnum> ::= <NUM> | <NAME>
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?

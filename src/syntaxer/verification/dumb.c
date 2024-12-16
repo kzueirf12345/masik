@@ -411,9 +411,9 @@ int dot_print_node_(const syntax_elem_t* const elem)
         break;
     case LEXEM_TYPE_OP:
         fprintf(DUMBER_.dot_file, 
-                "node%p [shape=Mrecord; label = \"{{%p|%s}|%ls}\"; fillcolor = peachpuff];\n",
+                "node%p [shape=Mrecord; label = \"{{%p|%s}|{%ls|%s}}\"; fillcolor = peachpuff];\n",
                 elem, elem, lexem_type_to_str(elem->lexem.type), 
-                OPERATIONS[elem->lexem.data.op].keyword);
+                OPERATIONS[elem->lexem.data.op].keyword, op_type_to_str(elem->lexem.data.op));
         break;
     case LEXEM_TYPE_VAR:
         fprintf(DUMBER_.dot_file, 

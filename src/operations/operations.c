@@ -6,9 +6,25 @@
 #include "logger/liblogger.h"
 #include "utils/utils.h"
 
+#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
+        case num_: return #name_;           
 
-#define OPERATION_HANDLE(num, name_, keyword_, ...)                                                 \
-    (operation_t){.type = num,  .keyword = keyword_},
+
+const char* op_type_to_str(const enum OpType type)
+{
+    switch(type)
+    {
+        #include "operations/codegen.h"
+
+        case OP_TYPE_UNKNOWN: return "UNKNOWN";
+        default:              return "UNKNOWN_OP_TYPE";
+    }
+    return "UNKNOWN_OP_TYPE";
+}
+#undef OPERATION_HANDLE
+
+#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                 \
+    (operation_t){.type = num_,  .keyword = keyword_},
 
 const operation_t OPERATIONS[] =
 {
@@ -17,7 +33,6 @@ const operation_t OPERATIONS[] =
 #undef OPERATION_HANDLE
 
 const size_t OPERATIONS_SIZE = sizeof(OPERATIONS) / sizeof(*OPERATIONS);
-
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
         if (wcsncmp(keyword_, str, wcslen(keyword_)) == 0) return OP_TYPE_##name_;

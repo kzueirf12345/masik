@@ -349,7 +349,7 @@ syntax_elem_t* desc_assignment_(desc_state_t* const desc_state)
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
@@ -381,7 +381,7 @@ syntax_elem_t* desc_compare_eq_ (desc_state_t* const desc_state)
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
@@ -413,7 +413,7 @@ syntax_elem_t* desc_compare_    (desc_state_t* const desc_state)
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
@@ -444,7 +444,7 @@ syntax_elem_t* desc_sum_(desc_state_t* const desc_state) {
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
@@ -476,7 +476,7 @@ syntax_elem_t* desc_mul_    (desc_state_t* const desc_state)
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
@@ -508,7 +508,7 @@ syntax_elem_t* desc_pow_    (desc_state_t* const desc_state)
 
         switch(lexem.data.op)
         {
-            #include "operations/codegen.h"
+#include "operations/codegen.h"
 
             case OP_TYPE_UNKNOWN:
             default:
