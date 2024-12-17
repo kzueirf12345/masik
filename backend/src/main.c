@@ -28,7 +28,7 @@ int main(const int argc, char* const argv[])
     );
 
     TRANSLATION_ERROR_HANDLE(translate(&tree, flags_objs.out),
-                                                                              dtor_all(&flags_objs);
+                                                             dtor_all(&flags_objs);tree_dtor(&tree);
     );
 
     tree_dtor(&tree);
