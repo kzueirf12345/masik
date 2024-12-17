@@ -31,28 +31,36 @@ typedef struct DescState
 #define ERROR_MSG_MAX_ 1024
 
 
-tree_elem_t* desc_start_      (desc_state_t* const desc_state);
+tree_elem_t* desc_start_        (desc_state_t* const desc_state);
 
-tree_elem_t* desc_statement_  (desc_state_t* const desc_state);
+tree_elem_t* desc_func_         (desc_state_t* const desc_state);
+tree_elem_t* desc_main_         (desc_state_t* const desc_state);
+tree_elem_t* desc_args_         (desc_state_t* const desc_state);
+tree_elem_t* desc_vars_         (desc_state_t* const desc_state);
 
-tree_elem_t* desc_expr_       (desc_state_t* const desc_state);
-tree_elem_t* desc_assignment_ (desc_state_t* const desc_state);
-tree_elem_t* desc_compare_eq_ (desc_state_t* const desc_state);
-tree_elem_t* desc_compare_    (desc_state_t* const desc_state);
-tree_elem_t* desc_sum_        (desc_state_t* const desc_state);
-tree_elem_t* desc_mul_        (desc_state_t* const desc_state);
-tree_elem_t* desc_pow_        (desc_state_t* const desc_state);
-tree_elem_t* desc_brakets_    (desc_state_t* const desc_state);
-tree_elem_t* desc_varnum_     (desc_state_t* const desc_state);
+tree_elem_t* desc_statement_    (desc_state_t* const desc_state);
 
-tree_elem_t* desc_declaration_(desc_state_t* const desc_state);
+tree_elem_t* desc_expr_         (desc_state_t* const desc_state);
+tree_elem_t* desc_assignment_   (desc_state_t* const desc_state);
+tree_elem_t* desc_compare_eq_   (desc_state_t* const desc_state);
+tree_elem_t* desc_compare_      (desc_state_t* const desc_state);
+tree_elem_t* desc_sum_          (desc_state_t* const desc_state);
+tree_elem_t* desc_mul_          (desc_state_t* const desc_state);
+tree_elem_t* desc_pow_          (desc_state_t* const desc_state);
+tree_elem_t* desc_brakets_      (desc_state_t* const desc_state);
+tree_elem_t* desc_var_num_func_ (desc_state_t* const desc_state);
 
-tree_elem_t* desc_if_         (desc_state_t* const desc_state);
-tree_elem_t* desc_while_      (desc_state_t* const desc_state);
+tree_elem_t* desc_call_func_    (desc_state_t* const desc_state);
+tree_elem_t* desc_ret_          (desc_state_t* const desc_state);
 
-tree_elem_t* desc_else_       (desc_state_t* const desc_state);
-tree_elem_t* desc_condition_  (desc_state_t* const desc_state);
-tree_elem_t* desc_body_       (desc_state_t* const desc_state);
+tree_elem_t* desc_declaration_  (desc_state_t* const desc_state);
+
+tree_elem_t* desc_if_           (desc_state_t* const desc_state);
+tree_elem_t* desc_while_        (desc_state_t* const desc_state);
+
+tree_elem_t* desc_else_         (desc_state_t* const desc_state);
+tree_elem_t* desc_condition_    (desc_state_t* const desc_state);
+tree_elem_t* desc_body_         (desc_state_t* const desc_state);
 
 
 enum TreeError output_errors_(desc_state_t desc_state);
@@ -163,30 +171,189 @@ tree_elem_t* desc_start_  (desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
     
-    tree_elem_t* elem = desc_statement_(desc_state);
-    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
+    const lexem_t lexem_please = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
 
     size_t old_ind = CUR_IND_;
 
-    tree_elem_t* elem2 = desc_statement_(desc_state);
+    tree_elem_t* func_lt = desc_func_(desc_state);
 
-    while (!IS_FAILURE_)
+    if (IS_FAILURE_)
     {
-        const lexem_t lexem = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
-        elem = CREATE_ELEM_(lexem, elem, elem2);
-
+        tree_elem_dtor_recursive_(&func_lt);
+    }
+    else
+    {
         old_ind = CUR_IND_;
+        tree_elem_t* func_lt2 = desc_func_(desc_state);
 
-        elem2 = desc_statement_(desc_state);
+        while (!IS_FAILURE_)
+        {
+            func_lt = CREATE_ELEM_(lexem_please, func_lt, func_lt2);
+
+            old_ind = CUR_IND_;
+            func_lt2 = desc_func_(desc_state);
+        }
+        tree_elem_dtor_recursive_(&func_lt2);
     }
     RESET_ERRORS_;
     CUR_IND_ = old_ind;
-    tree_elem_dtor_recursive_(&elem2);
+
+    //main
+
+    tree_elem_t* main = desc_main_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&func_lt);tree_elem_dtor_recursive_(&main););
+
+    //func rt
+
+    old_ind = CUR_IND_;
+
+    tree_elem_t* func_rt = desc_func_(desc_state);
+
+    if (IS_FAILURE_)
+    {
+        tree_elem_dtor_recursive_(&func_rt);
+    }
+    else
+    {
+        old_ind = CUR_IND_;
+        tree_elem_t* func_rt2 = desc_func_(desc_state);
+
+        while (!IS_FAILURE_)
+        {
+            func_rt = CREATE_ELEM_(lexem_please, func_rt, func_rt2);
+
+            old_ind = CUR_IND_;
+            func_rt2 = desc_func_(desc_state);
+        }
+        tree_elem_dtor_recursive_(&func_rt2);
+    }
+    RESET_ERRORS_;
+    CUR_IND_ = old_ind;
+
+    //all
+    lexem_t lexem_main = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_MAIN}};
 
     if (CUR_LEX_.type != LEXEM_TYPE_END)
     {
         fprintf(stderr, "desc_start fail\n");
-        RET_FAILURE_(tree_elem_dtor_recursive_(&elem););
+        RET_FAILURE_(tree_elem_dtor_recursive_(&func_lt);
+                     tree_elem_dtor_recursive_(&func_rt);
+                     tree_elem_dtor_recursive_(&main););
+    }
+
+    return CREATE_ELEM_(lexem_main, main, CREATE_ELEM_(lexem_please, func_lt, func_rt));
+}
+
+tree_elem_t* desc_func_(desc_state_t* const desc_state) 
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(FUNC))
+    {
+        // fprintf(stderr, "lexem_type: %d, op_type1_func: %s\n", CUR_LEX_.type,
+        //         op_type_to_str(CUR_LEX_.data.op));
+        RET_FAILURE_();
+    }
+    lexem_t lexem_func = CUR_LEX_;
+    SHIFT_;
+
+    if (!IS_VAR_)
+    {
+        RET_FAILURE_();
+    }
+    tree_elem_t* name = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+    SHIFT_;
+
+    if (!IS_OP_TYPE_(LBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&name););
+    }
+    SHIFT_;
+
+    size_t old_ind = CUR_IND_;
+    tree_elem_t* args = desc_vars_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RESET_ERRORS_;
+        CUR_IND_ = old_ind;
+        tree_elem_dtor_recursive_(&args);
+    }
+
+    if (!IS_OP_TYPE_(RBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&name);tree_elem_dtor_recursive_(&args););
+    }
+    SHIFT_;
+
+    tree_elem_t* body = desc_body_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&name);tree_elem_dtor_recursive_(&args);
+                 tree_elem_dtor_recursive_(&body););
+    
+    lexem_t lexem_please = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
+    return CREATE_ELEM_(lexem_func, CREATE_ELEM_(lexem_please, name, args), body);
+}
+
+tree_elem_t* desc_main_(desc_state_t* const desc_state) 
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(MAIN))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    tree_elem_t* elem = desc_body_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
+
+    return elem;
+}
+
+tree_elem_t* desc_args_(desc_state_t* const desc_state) 
+{
+    CHECK_ERROR_();
+
+    tree_elem_t* elem = desc_expr_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
+
+    while(IS_OP_TYPE_(ARGS_COMMA))
+    {
+        lexem_t lexem = CUR_LEX_;
+        SHIFT_;
+
+        tree_elem_t* elem2 = desc_expr_(desc_state);
+        CHECK_ERROR_(tree_elem_dtor_recursive_(&elem);tree_elem_dtor_recursive_(&elem2););
+
+        elem = CREATE_ELEM_(lexem, elem, elem2);
+    }
+
+    return elem;
+}
+
+tree_elem_t* desc_vars_(desc_state_t* const desc_state) 
+{
+    CHECK_ERROR_();
+
+    if (!IS_VAR_)
+    {
+        RET_FAILURE_();
+    }
+    tree_elem_t* elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+    SHIFT_;
+
+    while(IS_OP_TYPE_(ARGS_COMMA))
+    {
+        lexem_t lexem = CUR_LEX_;
+        SHIFT_;
+
+        if (!IS_VAR_)
+        {
+            RET_FAILURE_();
+        }
+        tree_elem_t* elem2 = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+        SHIFT_;
+
+        elem = CREATE_ELEM_(lexem, elem, elem2);
     }
 
     return elem;
@@ -237,6 +404,18 @@ tree_elem_t* desc_statement_(desc_state_t* const desc_state)
             RESET_ERRORS_;
             CUR_IND_ = old_ind;
             tree_elem_dtor_recursive_(&elem);
+
+            elem = desc_ret_(desc_state);
+
+                // fprintf(stderr, "op_type: %s\n", op_type_to_str(CUR_LEX_.data.op));
+
+            if (IS_FAILURE_)
+            {
+                // fprintf(stderr, "kek\n");
+                RESET_ERRORS_;
+                CUR_IND_ = old_ind;
+                tree_elem_dtor_recursive_(&elem);
+            }
         }
     }
 
@@ -246,6 +425,7 @@ tree_elem_t* desc_statement_(desc_state_t* const desc_state)
     {
         is_please = true;
         SHIFT_;
+        // fprintf(stderr, "kek\n");
     }
 
     if (!is_please)
@@ -480,25 +660,99 @@ tree_elem_t* desc_brakets_(desc_state_t* const desc_state)
         return elem;
     }
 
-    tree_elem_t* elem = desc_varnum_(desc_state);
+    tree_elem_t* elem = desc_var_num_func_(desc_state);
     CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
 
     return elem;
 }
 
-tree_elem_t* desc_varnum_(desc_state_t* const desc_state)
+tree_elem_t* desc_var_num_func_(desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
 
-    if (!IS_VAR_ && !IS_NUM_)
+    if (IS_NUM_)
+    {
+        tree_elem_t* elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+        SHIFT_;
+        return elem;
+    }
+
+    size_t old_ind = CUR_IND_;
+
+    tree_elem_t* elem = desc_call_func_(desc_state);
+    if (!IS_FAILURE_)
+    {
+        return elem;
+    }
+    tree_elem_dtor_recursive_(&elem);
+    CUR_IND_ = old_ind;
+    RESET_ERRORS_;
+
+    if (!IS_VAR_)
     {
         RET_FAILURE_();
     }
+    elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+    SHIFT_;
+    
+    return elem;
+}
 
-    tree_elem_t* elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+tree_elem_t* desc_call_func_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_VAR_)
+    {
+        RET_FAILURE_();
+    }
+    tree_elem_t* name = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
     SHIFT_;
 
-    return elem;
+    if (!IS_OP_TYPE_(LBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&name););
+    }
+    SHIFT_;
+
+    size_t old_ind = CUR_IND_;
+
+    tree_elem_t* args = desc_args_(desc_state);
+    if (IS_FAILURE_)
+    {
+        CUR_IND_ = old_ind;
+        RESET_ERRORS_;
+        tree_elem_dtor_recursive_(&args);
+    }
+
+    if (!IS_OP_TYPE_(RBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&name);tree_elem_dtor_recursive_(&args););
+    }
+    SHIFT_;
+
+    lexem_t lexem = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_FUNC_LBRAKET}}; //FIXME
+    return CREATE_ELEM_(lexem, name, args);
+}
+
+tree_elem_t* desc_ret_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+
+    if (!IS_OP_TYPE_(RET))
+    {
+        RET_FAILURE_();
+    }
+    lexem_t lexem = CUR_LEX_;
+    SHIFT_;
+
+    tree_elem_t* elem_lt = desc_var_num_func_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem_lt););
+
+    // fprintf(stderr, "op_type1_ret: %s\n", op_type_to_str(CUR_LEX_.data.op));
+
+    return CREATE_ELEM_(lexem, elem_lt, NULL);
 }
 
 tree_elem_t* desc_declaration_(desc_state_t* const desc_state) 
@@ -665,6 +919,7 @@ tree_elem_t* desc_body_       (desc_state_t* const desc_state)
 
         old_ind = CUR_IND_;
         tree_elem_t* elem2 = desc_statement_(desc_state);
+        // fprintf(stderr, "op_type: %s\n", op_type_to_str(CUR_LEX_.data.op));
 
         while (!IS_FAILURE_)
         {
@@ -677,6 +932,8 @@ tree_elem_t* desc_body_       (desc_state_t* const desc_state)
     }
     RESET_ERRORS_;
     CUR_IND_ = old_ind;
+
+    // fprintf(stderr, "op_type: %s\n", op_type_to_str(CUR_LEX_.data.op));
 
 
     if (!IS_OP_TYPE_(RBODY))
