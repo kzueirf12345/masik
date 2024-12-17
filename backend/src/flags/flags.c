@@ -36,6 +36,14 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
         return FLAGS_ERROR_SUCCESS;
     }
 
+    if (!strncpy(flags_objs->out_filename, "../assets/back_out.asm", FILENAME_MAX))
+    {
+        perror("Can't strncpy flags_objs->in_filename");
+        return FLAGS_ERROR_SUCCESS;
+    }
+
+    flags_objs->out = NULL;
+
     return FLAGS_ERROR_SUCCESS;
 }
 
@@ -54,7 +62,7 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
     lassert(argc, "");
 
     int getopt_rez = 0;
-    while ((getopt_rez = getopt(argc, argv, "l:i:")) != -1)
+    while ((getopt_rez = getopt(argc, argv, "l:i:o:")) != -1)
     {
         switch (getopt_rez)
         {
@@ -78,6 +86,16 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
 
                 break;
             }
+            case 'o':
+            {
+                if (!strncpy(flags_objs->out_filename, optarg, FILENAME_MAX))
+                {
+                    perror("Can't strncpy flags_objs->out_filename");
+                    return FLAGS_ERROR_FAILURE;
+                }
+
+                break;
+            }
 
             default:
             {
@@ -85,6 +103,12 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
                 return FLAGS_ERROR_FAILURE;
             }
         }
+    }
+
+    if (!(flags_objs->out = fopen(flags_objs->out_filename, "wb")))
+    {
+        perror("Can't open out file");
+        return FLAGS_ERROR_FAILURE;
     }
     
     return FLAGS_ERROR_SUCCESS;

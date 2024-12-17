@@ -45,10 +45,10 @@ FLAGS += $(ADD_FLAGS)
 LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils
 
 
-DIRS = flags
+DIRS = flags translation
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
-SOURCES = main.c flags/flags.c
+SOURCES = main.c flags/flags.c translation/translation.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)

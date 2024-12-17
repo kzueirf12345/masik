@@ -1,4 +1,4 @@
-#include "frontend/src/lexer/verification/verification.h"
+#include "lexer/verification/verification.h"
 
 #define CASE_ENUM_TO_STRING_(error) case error: return #error
 const char* lexer_strerror(const enum LexerError error)

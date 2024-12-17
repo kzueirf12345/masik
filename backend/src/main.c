@@ -5,6 +5,7 @@
 #include "logger/liblogger.h"
 #include "flags/flags.h"
 #include "utils/utils.h"
+#include "translation/translation.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -23,6 +24,10 @@ int main(const int argc, char* const argv[])
 
     tree_t tree = {};
     TREE_ERROR_HANDLE(tree_ctor(&tree, flags_objs.in_filename),
+                                                                              dtor_all(&flags_objs);
+    );
+
+    TRANSLATION_ERROR_HANDLE(translate(&tree, flags_objs.out),
                                                                               dtor_all(&flags_objs);
     );
 

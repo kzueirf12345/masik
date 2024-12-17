@@ -3,7 +3,8 @@
 		stack_build stack_clean stack_rebuild	\
 		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
 		frontend_all frontend_build frontend_clean frontend_rebuild frontend_start \
-		backend_all backend_build backend_clean backend_rebuild backend_start
+		backend_all backend_build backend_clean backend_rebuild backend_start \
+		splu_all splu_build splu_clean splu_rebuild splu_start
 
 PROJECT_NAME = masik
 
@@ -47,13 +48,13 @@ endif
 FLAGS += $(ADD_FLAGS)
 
 
-all:  libs_build frontend_all midlend_all backend_all
+all:  libs_build frontend_all midlend_all backend_all splu_all
 
-build: libs_build frontend_build midlend_build backend_build
+build: libs_build frontend_build midlend_build backend_build splu_build
 
-start: frontend_start midlend_start backend_start
+start: frontend_start midlend_start backend_start splu_start
 
-rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild
+rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild splu_rebuild
 
 
 frontend_all: frontend_build frontend_start
@@ -98,6 +99,21 @@ backend_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./backend/
 
 
+splu_all: splu_build splu_start
+
+splu_start:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) \
+	AOPTS="$(SAOPTS)" POPTS="$(SPOPTS)" start -C ./libs/SPlU/
+
+splu_rebuild: splu_clean splu_build
+
+splu_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/SPlU/
+
+splu_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/SPlU/
+
+
 libs_rebuild: libs_clean libs_build
 
 libs_build:
@@ -111,7 +127,7 @@ libs_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/
 
 
-clean: libs_clean frontend_clean midlend_clean backend_clean
+clean: libs_clean frontend_clean midlend_clean backend_clean splu_clean
 
 clean_all:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/logger         && \
@@ -119,4 +135,5 @@ clean_all:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./utils/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./frontend/          && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./midlend/          && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/SPlU          && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./backend/  

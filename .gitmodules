@@ -4,3 +4,6 @@
 [submodule "libs/stack_on_array"]
 	path = libs/stack_on_array
 	url = https://github.com/kzueirf12345/stack_on_array.git
+[submodule "libs/SPlU"]
+	path = libs/SPlU
+	url = https://github.com/kzueirf12345/SPlU.git
