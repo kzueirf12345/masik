@@ -1,22 +1,21 @@
 <start> ::= (<func>)* <main> (<func>)* <END> # refact IMPLEMENT
 
-<func> ::= "алё" <NAME> ":-)" <vars>? ";-)" <body> # refact IMPLEMENT FIXME not args
+<func> ::= "алё" <NAME> ":-)" <vars>? ";-)" <body> # refact IMPLEMENT
 <main> ::= "привет_масик" <body> # refact IMPLEMENT
 <vars> ::= <NAME> ("ещё" <NAME>)* # refact IMPLEMENT
 
 <statement> ::= <if> | <while> 
-             | ((<declaration> | <expr> | <ret>)? ("пж-пж")+) # refact IMPLEMENT
+             | ((<declaration> | <assignment> | <ret>)? ("пж-пж")+) # refact IMPLEMENT
 
-<expr> ::= <assignment> # FIXME return val in backend
-<assignment> ::=  <compare_eq> 
-    ( 
+<assignment> ::=  <NAME> 
         ("всего_за" 
         |       "подороже" |       "подешевле" 
         | "очень_подороже" | "очень_подешевле" 
         |       "подороже_что_пиздец"
         ) 
-        <assignment> 
-    )*
+        <expr> 
+
+<expr> ::= <compare_eq>
 <compare_eq> ::= <compare> (("близняшки" | "какашки") <compare>)*
 <compare> ::= <sum> 
     (
@@ -33,7 +32,7 @@
 
 <call_func> ::= <NAME> ":-)" <args>? ";-)" # refact IMPLEMENT
 <args> ::= <expr> ("ещё" <expr>)* # refact IMPLEMENT
-<ret> ::= "кладу_трубочку" <var_num_func> # refact IMPLEMENT
+<ret> ::= "кладу_трубочку" <expr> # refact IMPLEMENT
 
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?

@@ -397,7 +397,7 @@ tree_elem_t* desc_statement_(desc_state_t* const desc_state)
         CUR_IND_ = old_ind;
         tree_elem_dtor_recursive_(&elem);
 
-        elem = desc_expr_(desc_state);
+        elem = desc_assignment_(desc_state);
 
         if (IS_FAILURE_)
         {
@@ -440,7 +440,7 @@ tree_elem_t* desc_expr_(desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
 
-    tree_elem_t* elem = desc_assignment_(desc_state);
+    tree_elem_t* elem = desc_compare_eq_(desc_state);
     CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
 
     return elem;
@@ -453,31 +453,24 @@ tree_elem_t* desc_assignment_(desc_state_t* const desc_state)
 {
     CHECK_ERROR_();
 
-    tree_elem_t* elem = desc_compare_eq_(desc_state);
-    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
-
-    while (IS_ASSIGNMENT)
+    if (!IS_VAR_)
     {
-        lexem_t lexem = CUR_LEX_;
-        if (IS_OP_TYPE_(DECL_ASSIGNMENT)) 
-            lexem.data.op = OP_TYPE_ASSIGNMENT;
-
-        SHIFT_;
-
-        tree_elem_t* elem2 = desc_assignment_(desc_state);
-        CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
-
-        switch(lexem.data.op)
-        {
-#include "utils/src/operations/codegen.h"
-
-            case OP_TYPE_UNKNOWN:
-            default:
-                RET_FAILURE_(tree_elem_dtor_recursive_(&elem); tree_elem_dtor_recursive_(&elem2););
-        }
+        RET_FAILURE_();
     }
+    tree_elem_t* elem_name = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
+    SHIFT_;
 
-    return elem;
+    if (!IS_ASSIGNMENT)
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&elem_name););
+    }
+    lexem_t lexem = CUR_LEX_;
+    SHIFT_;
+
+    tree_elem_t* elem_expr = desc_expr_(desc_state);
+    CHECK_ERROR_(tree_elem_dtor_recursive_(&elem_expr);tree_elem_dtor_recursive_(&elem_name););
+
+    return CREATE_ELEM_(lexem, elem_name, elem_expr);
 }
 #undef OPERATION_HANDLE
 
@@ -716,7 +709,6 @@ tree_elem_t* desc_call_func_(desc_state_t* const desc_state)
     SHIFT_;
 
     size_t old_ind = CUR_IND_;
-
     tree_elem_t* args = desc_args_(desc_state);
     if (IS_FAILURE_)
     {
@@ -731,8 +723,8 @@ tree_elem_t* desc_call_func_(desc_state_t* const desc_state)
     }
     SHIFT_;
 
-    lexem_t lexem = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_FUNC_LBRAKET}}; //FIXME
-    return CREATE_ELEM_(lexem, name, args);
+    lexem_t lexem1 = {.type = LEXEM_TYPE_OP,  .data = {.op = OP_TYPE_FUNC_LBRAKET}};
+    return CREATE_ELEM_(lexem1, name, args);
 }
 
 tree_elem_t* desc_ret_(desc_state_t* const desc_state)
@@ -747,7 +739,7 @@ tree_elem_t* desc_ret_(desc_state_t* const desc_state)
     lexem_t lexem = CUR_LEX_;
     SHIFT_;
 
-    tree_elem_t* elem_lt = desc_var_num_func_(desc_state);
+    tree_elem_t* elem_lt = desc_expr_(desc_state);
     CHECK_ERROR_(tree_elem_dtor_recursive_(&elem_lt););
 
     // fprintf(stderr, "op_type1_ret: %s\n", op_type_to_str(CUR_LEX_.data.op));

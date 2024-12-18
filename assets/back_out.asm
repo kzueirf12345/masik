@@ -1,33 +1,62 @@
 PUSH 0
-POP [0]
-PUSH 1
-POP [1]
-PUSH 1
-POP [2]
-PUSH [2]
-PUSH [0]
-LEQ
+POP R1
 PUSH 0
-JE :label0
-JMP :label1
-:label2
-PUSH [2]
-PUSH [0]
-LEQ
+POP R2
 PUSH 0
-JE :label3
-:label1
-PUSH [1]
-PUSH [2]
-MUL
-POP [1]
-PUSH [2]
-PUSH 1
-ADD
-POP [2]
-JMP :label2
-:label0
-:label3
-PUSH [1]
+CALL :main
+POP R1
 OUT
 HLT
+:main
+PUSH 6
+POP [0+R1]
+PUSH R1
+PUSH [0+R1]
+PUSH R1
+PUSH 1
+ADD
+POP R1
+CALL :func_0_1
+POP R1
+POP R2
+POP R1
+PUSH R2
+PUSH R1
+RET
+RET
+
+:func_0_1
+POP [0+R1]
+PUSH [0+R1]
+PUSH 1
+EQ
+PUSH 0
+JE :label0
+PUSH 1
+POP R2
+POP R1
+PUSH R2
+PUSH R1
+RET
+JMP :label1
+:label0
+:label1
+PUSH R1
+PUSH [0+R1]
+PUSH 1
+SUB
+PUSH R1
+PUSH 1
+ADD
+POP R1
+CALL :func_0_1
+POP R1
+PUSH [0+R1]
+MUL
+POP R2
+POP R1
+PUSH R2
+PUSH R1
+RET
+RET
+
