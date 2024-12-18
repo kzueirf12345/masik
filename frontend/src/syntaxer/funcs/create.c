@@ -184,6 +184,7 @@ tree_elem_t* desc_start_  (desc_state_t* const desc_state)
     else
     {
         old_ind = CUR_IND_;
+        RESET_ERRORS_;
         tree_elem_t* func_lt2 = desc_func_(desc_state);
 
         while (!IS_FAILURE_)
@@ -216,6 +217,7 @@ tree_elem_t* desc_start_  (desc_state_t* const desc_state)
     else
     {
         old_ind = CUR_IND_;
+        RESET_ERRORS_;
         tree_elem_t* func_rt2 = desc_func_(desc_state);
 
         while (!IS_FAILURE_)
