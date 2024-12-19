@@ -8,7 +8,7 @@ POP R1
 OUT
 HLT
 :main
-PUSH 6
+PUSH 5
 POP [0+R1]
 PUSH R1
 PUSH [0+R1]
@@ -16,7 +16,7 @@ PUSH R1
 PUSH 1
 ADD
 POP R1
-CALL :func_2_1
+CALL :func_0_1
 POP R1
 POP R2
 POP R1
