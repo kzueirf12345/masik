@@ -4,6 +4,7 @@
 		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
 		frontend_all frontend_build frontend_clean frontend_rebuild frontend_start \
 		backend_all backend_build backend_clean backend_rebuild backend_start \
+		midlend_all midlend_build midlend_clean midlend_rebuild midlend_start\
 		splu_all splu_build splu_clean splu_rebuild splu_start
 
 PROJECT_NAME = masik
@@ -67,9 +68,6 @@ frontend_rebuild: frontend_clean frontend_build
 frontend_build:
 	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./frontend/
 
-
-midlend_clean:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./midlend/
 
 midlend_all: midlend_build midlend_start
 

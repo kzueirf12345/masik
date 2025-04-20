@@ -108,7 +108,7 @@ int str_from_file(const char* const filename, wchar_t** str, size_t* const str_s
 
     char* temp_str = mmap(NULL, *str_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-    *str = calloc(*str_size, sizeof(**str));
+    *str = calloc(*str_size, sizeof(**str)*2); //FIXME
 
     if (!*str)
     {
@@ -117,7 +117,7 @@ int str_from_file(const char* const filename, wchar_t** str, size_t* const str_s
         return 1;
     }
 
-    if (mbstowcs(*str, temp_str, *str_size * sizeof(**str)) == 1)
+    if (mbstowcs(*str, temp_str, *str_size * sizeof(**str)) == (size_t)-1)
     {
         perror("Can't mbstowcs");
         close(fd);

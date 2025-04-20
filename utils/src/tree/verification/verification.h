@@ -18,6 +18,7 @@ enum TreeError
     TREE_ERROR_SIZE_GREATER           = 7,
     TREE_ERROR_SIZE_LESSER            = 8,
     TREE_ERROR_INVALID_OP_TYPE        = 9,
+    TREE_ERROR_INVALID_DATA_NUM       = 10,
 
     TREE_ERROR_UNKNOWN                = 20,
 };

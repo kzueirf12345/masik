@@ -24,11 +24,24 @@ const char* flags_strerror(const enum FlagsError error);
         }                                                                                           \
     } while(0)
 
+enum Mode
+{
+    MODE_NOTHING    = 0,
+    MODE_OBFUSCATE  = 1,
+    MODE_COMPLICATE = 2,
+    MODE_SIMPLIFY   = 3
+};
+
 typedef struct FlagsObjs
 {
     char log_folder [FILENAME_MAX];
 
     char in_filename[FILENAME_MAX];
+    char out_filename[FILENAME_MAX];
+
+    FILE* out;
+
+    enum Mode mode;
 
 } flags_objs_t;
 

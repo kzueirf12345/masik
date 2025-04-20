@@ -21,12 +21,13 @@ const char* tree_strerror(const enum TreeError error)
         CASE_ENUM_TO_STRING_(TREE_ERROR_SIZE_GREATER);
         CASE_ENUM_TO_STRING_(TREE_ERROR_SIZE_LESSER);
         CASE_ENUM_TO_STRING_(TREE_ERROR_INVALID_OP_TYPE);
+        CASE_ENUM_TO_STRING_(TREE_ERROR_INVALID_DATA_NUM);
         CASE_ENUM_TO_STRING_(TREE_ERROR_UNKNOWN);
 
         default:
-            return "UNKNOWN_SYNTAX_ERROR";
+            return "UNKNOWN_TREE_ERROR";
     }
-    return "UNKNOWN_SYNTAX_ERROR";
+    return "UNKNOWN_TREE_ERROR";
 }
 #undef CASE_ENUM_TO_STRING_
 

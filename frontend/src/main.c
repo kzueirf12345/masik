@@ -36,8 +36,6 @@ int main(const int argc, char* const argv[])
                                                            lexer_dtor(&lexer);dtor_all(&flags_objs);
     );
 
-    // tree_dumb(&syntaxer);
-
     TREE_ERROR_HANDLE(tree_print(syntaxer, flags_objs.out),
                                       lexer_dtor(&lexer);dtor_all(&flags_objs);tree_dtor(&syntaxer);
     );
@@ -82,7 +80,7 @@ int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
 int dtor_all(flags_objs_t* const flags_objs)
 {
     LOGG_ERROR_HANDLE(                                                               logger_dtor());
-    TREE_DUMB_ERROR_HANDLE(                                               tree_dumb_dtor());
+    TREE_DUMB_ERROR_HANDLE(                                                       tree_dumb_dtor());
     FLAGS_ERROR_HANDLE(                                                flags_objs_dtor(flags_objs));
 
     return EXIT_SUCCESS;

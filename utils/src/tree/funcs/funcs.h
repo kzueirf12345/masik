@@ -15,4 +15,6 @@ void           tree_dtor(tree_t* const tree);
 
 enum TreeError tree_print(const tree_t tree, FILE* out);
 
+void tree_update_size(tree_t* const tree);
+
 #endif /* MASIK_UTILS_SRC_TREE_FUNCS_FUNCS_H */

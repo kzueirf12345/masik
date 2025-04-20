@@ -1,11 +1,11 @@
-<start> ::= (<func>)* <main> (<func>)* <END> # refact IMPLEMENT
+<start> ::= (<func>)* <main> (<func>)* <END>
 
-<func> ::= "алё" <NAME> ":-)" <vars>? ";-)" <body> # refact IMPLEMENT
-<main> ::= "привет_масик" <body> # refact IMPLEMENT
-<vars> ::= <NAME> ("ещё" <NAME>)* # refact IMPLEMENT
+<func> ::= "алё" <NAME> ":-)" <vars>? ";-)" <body>
+<main> ::= "привет_масик" <body>
+<vars> ::= <NAME> ("ещё" <NAME>)*
 
 <statement> ::= <if> | <while> 
-             | ((<declaration> | <assignment> | <ret>)? ("пж-пж")+) # refact IMPLEMENT
+             | ((<declaration> | <assignment> | <ret>)? ("пж-пж")+)
 
 <assignment> ::=  <NAME> 
         ("всего_за" 
@@ -27,12 +27,12 @@
 <sum> ::= <mul> (("плюс_вайбик" | "минус_вайбик") <mul>)*
 <mul> ::= <pow> (("звёздочка" | "очень_минусик") <pow>)*
 <pow> ::= <brackets> ("очень_звёздочка" <pow>)*
-<brackets> ::= ":-)" <expr> ";-)" | <var_num_func> # refact IMPLEMENT
-<var_num_func> ::= <NUM> | <call_func> | <NAME>  # refact IMPLEMENT
+<brackets> ::= ":-)" <expr> ";-)" | <var_num_func>
+<var_num_func> ::= <NUM> | <call_func> | <NAME> 
 
-<call_func> ::= <NAME> ":-)" <args>? ";-)" # refact IMPLEMENT
-<args> ::= <expr> ("ещё" <expr>)* # refact IMPLEMENT
-<ret> ::= "кладу_трубочку" <expr> # refact IMPLEMENT
+<call_func> ::= <NAME> ":-)" <args>? ";-)"
+<args> ::= <expr> ("ещё" <expr>)*
+<ret> ::= "кладу_трубочку" <expr>
 
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
@@ -43,4 +43,3 @@
 <else> ::= "не_сосать?" <body>
 <condition> ::= "туть" <expr> "и_туть"
 <body> ::= "сосать" (<statement>)* "кончать"
-

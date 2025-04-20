@@ -23,8 +23,8 @@ const char* op_type_to_str(const enum OpType type)
 }
 #undef OPERATION_HANDLE
 
-#define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                 \
-    (operation_t){.type = num_,  .keyword = keyword_},
+#define OPERATION_HANDLE(num_, name_, keyword_, is_ariphmetic_)                                                 \
+    (operation_t){.type = num_,  .keyword = keyword_, .is_ariphmetic = is_ariphmetic_},
 
 const operation_t OPERATIONS[] =
 {

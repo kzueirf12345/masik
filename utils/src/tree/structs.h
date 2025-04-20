@@ -9,6 +9,7 @@
 #include "utils/src/operations/operations.h"
 
 typedef int64_t num_t;
+#define NUM_POISON ((num_t)2286661337)
 
 enum LexemType
 {

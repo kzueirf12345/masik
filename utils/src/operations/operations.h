@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <wchar.h>
+#include <stdbool.h>
 
 #define OPERATION_HANDLE(num, name, ...)                                                            \
         OP_TYPE_##name = num,
@@ -23,6 +24,8 @@ typedef struct Operation
 
     // const wchar_t* const name;
     const wchar_t* const keyword;
+
+    const bool is_ariphmetic;
 } operation_t;
 
 extern const operation_t OPERATIONS[];

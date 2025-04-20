@@ -1,7 +1,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "flags/flags.h"
+#include "flags.h"
 #include "logger/liblogger.h"
 #include "utils/utils.h"
 
@@ -30,11 +30,21 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
         return FLAGS_ERROR_SUCCESS;
     }
 
-    if (!strncpy(flags_objs->in_filename, "../assets/tree.txt", FILENAME_MAX))
+    if (!strncpy(flags_objs->in_filename, "../assets/front_out.txt", FILENAME_MAX))
     {
         perror("Can't strncpy flags_objs->in_filename");
         return FLAGS_ERROR_SUCCESS;
     }
+
+    if (!strncpy(flags_objs->out_filename, "../assets/midle_out.txt", FILENAME_MAX))
+    {
+        perror("Can't strncpy flags_objs->out_filename");
+        return FLAGS_ERROR_SUCCESS;
+    }
+
+    flags_objs->out = NULL;
+
+    flags_objs->mode = MODE_NOTHING;
 
     return FLAGS_ERROR_SUCCESS;
 }
@@ -42,6 +52,12 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
 enum FlagsError flags_objs_dtor (flags_objs_t* const flags_objs)
 {
     lassert(!is_invalid_ptr(flags_objs), "");
+
+    if (flags_objs->out && fclose(flags_objs->out))
+    {
+        perror("Can't fclose out file");
+        return FLAGS_ERROR_FAILURE;
+    }
 
     return FLAGS_ERROR_SUCCESS;
 }
@@ -54,7 +70,7 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
     lassert(argc, "");
 
     int getopt_rez = 0;
-    while ((getopt_rez = getopt(argc, argv, "l:i:")) != -1)
+    while ((getopt_rez = getopt(argc, argv, "l:i:o:m:")) != -1)
     {
         switch (getopt_rez)
         {
@@ -78,6 +94,22 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
 
                 break;
             }
+            case 'o':
+            {
+                if (!strncpy(flags_objs->out_filename, optarg, FILENAME_MAX))
+                {
+                    perror("Can't strncpy flags_objs->out_filename");
+                    return FLAGS_ERROR_FAILURE;
+                }
+
+                break;
+            }
+
+            case 'm':
+            {
+                flags_objs->mode = (enum Mode)atoi(optarg);
+                break;
+            }
 
             default:
             {
@@ -86,6 +118,13 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
             }
         }
     }
+
+    if (!(flags_objs->out = fopen(flags_objs->out_filename, "wb")))
+    {
+        perror("Can't open out file");
+        return FLAGS_ERROR_FAILURE;
+    }
+
     
     return FLAGS_ERROR_SUCCESS;
 }

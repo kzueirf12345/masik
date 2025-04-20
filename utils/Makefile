@@ -52,7 +52,7 @@ DIRS = operations tree tree/funcs tree/verification
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 SOURCES = utils.c operations/operations.c tree/funcs/create.c tree/verification/verification.c \
-		  tree/verification/dumb.c
+		  tree/verification/dumb.c operations/op_math.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)

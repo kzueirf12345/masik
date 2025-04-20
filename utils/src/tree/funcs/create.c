@@ -269,3 +269,21 @@ enum TreeError tree_print_lexem_(const lexem_t lexem, FILE* out)
 
     return TREE_ERROR_SUCCESS;
 }
+
+size_t tree_size_(const tree_elem_t* const elem);
+
+void tree_update_size(tree_t* const tree)
+{
+    lassert(!is_invalid_ptr(tree), "");
+
+    tree->size = tree_size_(tree->Groot);
+}
+
+size_t tree_size_(const tree_elem_t* const elem)
+{
+    if (!elem) return 0;
+
+    lassert(!is_invalid_ptr(elem), "");
+
+    return 1 + tree_size_(elem->lt) + tree_size_(elem->rt);
+}
