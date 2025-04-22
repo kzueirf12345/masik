@@ -73,7 +73,7 @@ int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
 int dtor_all(flags_objs_t* const flags_objs)
 {
     LOGG_ERROR_HANDLE(                                                               logger_dtor());
-    // TREE_DUMB_ERROR_HANDLE(                                               tree_dumb_dtor());
+    TREE_DUMB_ERROR_HANDLE(                                                       tree_dumb_dtor());
     FLAGS_ERROR_HANDLE(                                                flags_objs_dtor(flags_objs));
 
     return EXIT_SUCCESS;
@@ -103,8 +103,8 @@ int logger_init(char* const log_folder)
     LOGG_ERROR_HANDLE(logger_set_level_details(LOG_LEVEL_DETAILS_ALL));
     LOGG_ERROR_HANDLE(logger_set_logout_file(logout_filename));
 
-    // TREE_DUMB_ERROR_HANDLE(tree_dumb_ctor());
-    // TREE_DUMB_ERROR_HANDLE(tree_dumb_set_out_file(dumb_filename));
+    TREE_DUMB_ERROR_HANDLE(tree_dumb_ctor());
+    TREE_DUMB_ERROR_HANDLE(tree_dumb_set_out_file(dumb_filename));
     
     return EXIT_SUCCESS;
 }

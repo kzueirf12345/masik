@@ -45,10 +45,11 @@ FLAGS += $(ADD_FLAGS)
 LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils
 
 
-DIRS = flags translation
+DIRS = flags translation translation/verification translation/funcs
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
-SOURCES = main.c flags/flags.c translation/translation.c
+SOURCES = main.c flags/flags.c translation/verification/verification.c \
+		  translation/funcs/splu.c translation/funcs/nasm.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
@@ -63,7 +64,6 @@ start:
 build: $(PROJECT_NAME).out
 
 rebuild: clean_all build
-
 
 $(PROJECT_NAME).out: $(OBJECTS_REL_PATH)
 	@$(COMPILER) $(FLAGS) -o $@ $^  $(LIBS)

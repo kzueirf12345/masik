@@ -1,24 +1,7 @@
-#include "translation/translation.h"
+#include "translation/structs.h"
 #include "utils/utils.h"
-
-#define CASE_ENUM_TO_STRING_(error) case error: return #error
-const char* translation_strerror(const enum TranslationError error)
-{
-    switch(error)
-    {
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_SUCCESS);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_STANDARD_ERRNO);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_STACK);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_UNDECL_VAR);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_INVALID_OP_TYPE);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_INVALID_LEXEM_TYPE);
-        CASE_ENUM_TO_STRING_(TRANSLATION_ERROR_REDECL_VAR);
-        default:
-            return "UNKNOWN_TRANSLATION_ERROR";
-    }
-    return "UNKNOWN_TRANSLATION_ERROR";
-}
-#undef CASE_ENUM_TO_STRING_
+#include "stack_on_array/libstack.h"
+#include "translation/funcs/funcs.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -32,37 +15,7 @@ const char* translation_strerror(const enum TranslationError error)
         }                                                                                           \
     } while(0)
 
-typedef struct Func
-{
-    size_t num;
-    size_t count_args;
-} func_t;
-//NOTE func_##num_##count_args
-
-// int func_cmp_(const func_t* const first, const func_t* const second);
-// int func_cmp_wrapper_(const void* const first, const void* const second);
-
-// int func_cmp_(const func_t* const first, const func_t* const second)
-// {
-//     return first->num == second->num && first->count_args == second->count_args;
-// }
-// int func_cmp_wrapper_(const void* const first, const void* const second)
-// {
-//     return func_cmp_(first, second);
-// }
-
-typedef struct Translator
-{
-    stack_key_t vars;
-    stack_key_t funcs;
-    size_t label_num;
-    size_t count_var_decl;
-} translator_t;
-
-enum TranslationError translator_ctor_(translator_t* const translator);
-void                  translator_dtor_(translator_t* const translator);
-
-enum TranslationError translator_ctor_(translator_t* const translator)
+static enum TranslationError translator_ctor_(translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
 
@@ -74,7 +27,7 @@ enum TranslationError translator_ctor_(translator_t* const translator)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-void translator_dtor_(translator_t* const translator)
+static void translator_dtor_(translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
 
@@ -85,18 +38,19 @@ void translator_dtor_(translator_t* const translator)
 
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
-        enum TranslationError translate_##name_(translator_t* const translator,                      \
-                                               const tree_elem_t* elem, FILE* out);
+        static enum TranslationError translate_##name_(translator_t* const translator,              \
+                                                       const tree_elem_t* elem, FILE* out);
 
 #include "utils/src/operations/codegen.h"
 
 #undef OPERATION_HANDLE
 
-enum TranslationError translate_recursive_(translator_t* const translator, const tree_elem_t* elem, 
-                                           FILE* out);
+static enum TranslationError translate_recursive_(translator_t* const translator, 
+                                                  const tree_elem_t* elem, 
+                                                  FILE* out);
 
 
-enum TranslationError translate(const tree_t* const tree, FILE* out)
+enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 {
     TREE_VERIFY(tree);
     lassert(!is_invalid_ptr(out), "");
@@ -104,19 +58,17 @@ enum TranslationError translate(const tree_t* const tree, FILE* out)
     translator_t translator = {};
     TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
 
-    fprintf(out, "PUSH 0\n");
-    fprintf(out, "POP R1\n");
-    fprintf(out, "PUSH 0\n");
-    fprintf(out, "POP R2\n");
-    fprintf(out, "PUSH 0\n");
-    fprintf(out, "CALL :main\n");
-    fprintf(out, "POP R1\n");
-    fprintf(out, "OUT\n");
-    fprintf(out, "HLT\n");
+    fprintf(out, "section .text\n");
+    fprintf(out, "global _start\n\n");
+    fprintf(out, "_start:\n");
 
-    TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
-                             translator_dtor_(&translator);
-    );
+    // TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
+    //                          translator_dtor_(&translator);
+    // );
+
+    fprintf(out, "mov rax, 60\n");
+    fprintf(out, "mov rdi, 0\n");
+    fprintf(out, "syscall\n");
 
     translator_dtor_(&translator);
 
@@ -218,7 +170,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
 }
 #undef OPERATION_HANDLE
 
-enum TranslationError translate_SUM(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_SUM(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -232,7 +184,7 @@ enum TranslationError translate_SUM(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_SUB(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_SUB(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -246,7 +198,7 @@ enum TranslationError translate_SUB(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_MUL(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_MUL(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -260,7 +212,7 @@ enum TranslationError translate_MUL(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_DIV(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_DIV(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -274,7 +226,7 @@ enum TranslationError translate_DIV(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_POW(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_POW(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -288,7 +240,7 @@ enum TranslationError translate_POW(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -299,7 +251,7 @@ enum TranslationError translate_LBRAKET(translator_t* const translator, const tr
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -310,7 +262,7 @@ enum TranslationError translate_RBRAKET(translator_t* const translator, const tr
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_PLEASE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_PLEASE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -322,7 +274,7 @@ enum TranslationError translate_PLEASE(translator_t* const translator, const tre
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -340,7 +292,7 @@ enum TranslationError translate_ASSIGNMENT(translator_t* const translator, const
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -367,7 +319,7 @@ enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const translator, 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_DECL_FLAG(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_DECL_FLAG(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -378,7 +330,7 @@ enum TranslationError translate_DECL_FLAG(translator_t* const translator, const 
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_IF(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_IF(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -411,7 +363,7 @@ enum TranslationError translate_IF(translator_t* const translator, const tree_el
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_LBODY(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_LBODY(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -422,7 +374,7 @@ enum TranslationError translate_LBODY(translator_t* const translator, const tree
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_RBODY(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_RBODY(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -433,7 +385,7 @@ enum TranslationError translate_RBODY(translator_t* const translator, const tree
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_COND_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_COND_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -444,7 +396,7 @@ enum TranslationError translate_COND_LBRAKET(translator_t* const translator, con
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_COND_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_COND_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -455,7 +407,7 @@ enum TranslationError translate_COND_RBRAKET(translator_t* const translator, con
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_WHILE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_WHILE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -505,7 +457,7 @@ enum TranslationError translate_WHILE(translator_t* const translator, const tree
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_POW_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_POW_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -527,7 +479,7 @@ enum TranslationError translate_POW_ASSIGNMENT(translator_t* const translator, c
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -549,7 +501,7 @@ enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const translator, c
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_SUB_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_SUB_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -571,7 +523,7 @@ enum TranslationError translate_SUB_ASSIGNMENT(translator_t* const translator, c
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_MUL_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_MUL_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -593,7 +545,7 @@ enum TranslationError translate_MUL_ASSIGNMENT(translator_t* const translator, c
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_DIV_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_DIV_ASSIGNMENT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -615,7 +567,7 @@ enum TranslationError translate_DIV_ASSIGNMENT(translator_t* const translator, c
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_EQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_EQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -629,7 +581,7 @@ enum TranslationError translate_EQ(translator_t* const translator, const tree_el
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_NEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_NEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -643,7 +595,7 @@ enum TranslationError translate_NEQ(translator_t* const translator, const tree_e
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_LESS(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_LESS(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -657,7 +609,7 @@ enum TranslationError translate_LESS(translator_t* const translator, const tree_
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_LESSEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_LESSEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -671,7 +623,7 @@ enum TranslationError translate_LESSEQ(translator_t* const translator, const tre
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_GREAT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_GREAT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -685,7 +637,7 @@ enum TranslationError translate_GREAT(translator_t* const translator, const tree
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_GREATEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_GREATEQ(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -699,7 +651,7 @@ enum TranslationError translate_GREATEQ(translator_t* const translator, const tr
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_ELSE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_ELSE(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -710,7 +662,7 @@ enum TranslationError translate_ELSE(translator_t* const translator, const tree_
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_FUNC(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_FUNC(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -749,46 +701,14 @@ enum TranslationError translate_FUNC(translator_t* const translator, const tree_
         fprintf(out, "POP [%zu+R1]\n", stack_size(translator->vars) - 1);
     }
 
-    /*
-    stack_key_t stack_args = 0;
-    STACK_ERROR_HANDLE_(STACK_CTOR(&stack_args, sizeof(size_t), func.count_args));
-
-    const tree_elem_t* arg = elem->lt->rt;
-    for (size_t count = 0; count < func.count_args - 1; ++count, arg = arg->lt)
-    {
-        CHECK_UNDECLD_VAR_(arg->rt);
-        STACK_ERROR_HANDLE_(stack_push(&stack_args, &arg->rt->lexem.data.var), 
-                            stack_dtor(&stack_args);
-        );
-    }
-    if (func.count_args != 0)
-    {
-        CHECK_UNDECLD_VAR_(arg);
-        STACK_ERROR_HANDLE_(stack_push(&stack_args, &arg->lexem.data.var),
-                            stack_dtor(&stack_args);
-        );
-    }
-
-    while (!stack_is_empty(stack_args))
-    {
-        size_t arg_num = 0;
-        STACK_ERROR_HANDLE_(stack_pop (&stack_args,       &arg_num), stack_dtor(&stack_args););
-        STACK_ERROR_HANDLE_(stack_push(&translator->vars, &arg_num), stack_dtor(&stack_args););
-        ++translator->count_var_decl;
-        fprintf(out, "POP [%zu+R1]\n", stack_size(translator->vars) - 1);
-    }
-
-    stack_dtor(&stack_args);
-    */
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "RET\n\n");
+    // fprintf(out, "RET\n\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_FUNC_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_FUNC_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -817,7 +737,7 @@ enum TranslationError translate_FUNC_LBRAKET(translator_t* const translator, con
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_FUNC_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_FUNC_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -828,7 +748,7 @@ enum TranslationError translate_FUNC_RBRAKET(translator_t* const translator, con
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_MAIN(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_MAIN(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -842,14 +762,14 @@ enum TranslationError translate_MAIN(translator_t* const translator, const tree_
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
-    fprintf(out, "RET\n\n");
+    // fprintf(out, "RET\n\n");
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_ARGS_COMMA(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_ARGS_COMMA(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -861,7 +781,7 @@ enum TranslationError translate_ARGS_COMMA(translator_t* const translator, const
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError translate_CALL_FUNC_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_CALL_FUNC_LBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -872,7 +792,7 @@ enum TranslationError translate_CALL_FUNC_LBRAKET(translator_t* const translator
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_CALL_FUNC_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_CALL_FUNC_RBRAKET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
@@ -883,7 +803,7 @@ enum TranslationError translate_CALL_FUNC_RBRAKET(translator_t* const translator
     return TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-enum TranslationError translate_RET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+static enum TranslationError translate_RET(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");

@@ -5,7 +5,8 @@
 		frontend_all frontend_build frontend_clean frontend_rebuild frontend_start \
 		backend_all backend_build backend_clean backend_rebuild backend_start \
 		midlend_all midlend_build midlend_clean midlend_rebuild midlend_start\
-		splu_all splu_build splu_clean splu_rebuild splu_start
+		splu_all splu_build splu_clean splu_rebuild splu_start \
+		nasm_all nasm_build nasm_clean nasm_rebuild nasm_start
 
 PROJECT_NAME = masik
 
@@ -49,13 +50,38 @@ endif
 FLAGS += $(ADD_FLAGS)
 
 
-all:  libs_build frontend_all midlend_all backend_all splu_all
+all:  libs_build frontend_all midlend_all backend_all splu_all nasm_all
 
 build: libs_build frontend_build midlend_build backend_build splu_build
 
-start: frontend_start midlend_start backend_start splu_start
+start: frontend_start midlend_start backend_start splu_start nasm_build nasm_start
 
-rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild splu_rebuild
+rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild splu_rebuild nasm_clean
+
+
+ASM_LINKER = ld
+ASM_COMPILER = nasm
+SYSTEM = elf64
+ASM_FILENAME = masik_nasm
+
+nasm_all: nasm_build nasm_start
+
+nasm_rebuild: nasm_clean nasm_build
+
+nasm_start: nasm_build
+	./$(ASM_FILENAME).out
+
+nasm_build: ./assets/$(ASM_FILENAME).nasm | ./$(BUILD_DIR)/
+	$(ASM_COMPILER) -f $(SYSTEM) -l ./$(BUILD_DIR)/$(ASM_FILENAME).lst -o ./$(BUILD_DIR)/$(ASM_FILENAME).o ./assets/$(ASM_FILENAME).nasm ;
+	$(ASM_LINKER) ./$(BUILD_DIR)/$(ASM_FILENAME).o -o  $(ASM_FILENAME).out
+
+nasm_clean:
+	rm -rf ./build/*.o ;
+	rm -rf ./build/*.lst ;
+	rm -rf ./*.out
+
+./$(BUILD_DIR)/:
+	mkdir $@
 
 
 frontend_all: frontend_build frontend_start
@@ -67,6 +93,9 @@ frontend_rebuild: frontend_clean frontend_build
 
 frontend_build:
 	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./frontend/
+
+frontend_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./frontend/
 
 
 midlend_all: midlend_build midlend_start

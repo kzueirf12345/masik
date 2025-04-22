@@ -29,9 +29,11 @@ typedef struct FlagsObjs
     char log_folder [FILENAME_MAX];
 
     char in_filename[FILENAME_MAX];
-    char out_filename[FILENAME_MAX];
+    char splu_filename[FILENAME_MAX];
+    char nasm_filename[FILENAME_MAX];
 
-    FILE* out;
+    FILE* splu_out;
+    FILE* nasm_out;
 } flags_objs_t;
 
 enum FlagsError flags_objs_ctor (flags_objs_t* const flags_objs);

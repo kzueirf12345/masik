@@ -108,7 +108,7 @@ int str_from_file(const char* const filename, wchar_t** str, size_t* const str_s
 
     char* temp_str = mmap(NULL, *str_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-    *str = calloc(*str_size, sizeof(**str)*2); //FIXME
+    *str = calloc(*str_size + 1, sizeof(**str));
 
     if (!*str)
     {

@@ -5,7 +5,7 @@
 #include "logger/liblogger.h"
 #include "flags/flags.h"
 #include "utils/utils.h"
-#include "translation/translation.h"
+#include "translation/funcs/funcs.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -27,9 +27,14 @@ int main(const int argc, char* const argv[])
                                                                               dtor_all(&flags_objs);
     );
 
-    TRANSLATION_ERROR_HANDLE(translate(&tree, flags_objs.out),
+    TRANSLATION_ERROR_HANDLE(translate_splu(&tree, flags_objs.splu_out),
                                                              dtor_all(&flags_objs);tree_dtor(&tree);
     );
+
+    TRANSLATION_ERROR_HANDLE(translate_nasm(&tree, flags_objs.nasm_out),
+                                                             dtor_all(&flags_objs);tree_dtor(&tree);
+    );
+
 
     tree_dtor(&tree);
     
@@ -70,7 +75,7 @@ int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
 int dtor_all(flags_objs_t* const flags_objs)
 {
     LOGG_ERROR_HANDLE(                                                               logger_dtor());
-    TREE_DUMB_ERROR_HANDLE(                                               tree_dumb_dtor());
+    TREE_DUMB_ERROR_HANDLE(                                                       tree_dumb_dtor());
     FLAGS_ERROR_HANDLE(                                                flags_objs_dtor(flags_objs));
 
     return EXIT_SUCCESS;

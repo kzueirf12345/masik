@@ -25,8 +25,6 @@ POP R1
 PUSH R2
 PUSH R1
 RET
-RET
-
 :func_0_1
 POP [0+R1]
 PUSH [0+R1]
@@ -60,8 +58,6 @@ POP R1
 PUSH R2
 PUSH R1
 RET
-RET
-
 :func_2_1
 POP [0+R1]
 PUSH [0+R1]
@@ -118,5 +114,3 @@ POP R1
 PUSH R2
 PUSH R1
 RET
-RET
-

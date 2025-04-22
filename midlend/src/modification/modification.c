@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "modification/modification.h"
 #include "logger/liblogger.h"
 #include "utils/src/operations/op_math.h"
@@ -17,8 +19,6 @@ const char* modification_strerror(const enum ModificationError error)
 #undef CASE_ENUM_TO_STRING_
 
 
-
-
 //====================================================================================
 
 enum TreeError tree_simplify_(tree_t* const tree);
@@ -36,11 +36,11 @@ enum TreeError tree_modify(tree_t* const tree, const enum Mode mode)
         TREE_ERROR_HANDLE(tree_simplify_(tree));
         break;
 
-    case MODE_OBFUSCATE:
+    case MODE_COMPLICATE:
         //TODO implement
         break;
-    
-    case MODE_COMPLICATE:
+
+    case MODE_OBFUSCATE:
         //TODO implement
         break;
     
@@ -75,8 +75,8 @@ enum TreeError tree_simplify_(tree_t* const tree)
     return TREE_ERROR_SUCCESS;
 }
 
-#define OPERATION_HANDLE(num_, name_, ...)                                                                 \
-    case OP_TYPE_##name_:                                                                            \
+#define OPERATION_HANDLE(num_, name_, ...)                                                          \
+    case OP_TYPE_##name_:                                                                           \
         *elem = tree_elem_ctor((lexem_t){.type = LEXEM_TYPE_NUM,                                    \
                                          .data.num = math_##name_((*elem)->lt->lexem.data.num,      \
                                                                   (*elem)->rt->lexem.data.num)},    \
@@ -145,72 +145,81 @@ enum TreeError tree_simplify_trivial_  (tree_elem_t** elem, size_t* const count_
     TREE_ERROR_HANDLE(tree_simplify_trivial_(&(*elem)->lt, count_changes));
     TREE_ERROR_HANDLE(tree_simplify_trivial_(&(*elem)->rt, count_changes));
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 
-    if ((*elem)->lexem.data.op == OP_TYPE_POW)
+    switch((*elem)->lexem.data.op)
     {
-        TREE_ERROR_HANDLE(tree_simplify_POW_(elem, count_changes));
+        case OP_TYPE_POW:
+        {
+            TREE_ERROR_HANDLE(tree_simplify_POW_(elem, count_changes));
+            break;
+        }
+        case OP_TYPE_MUL:
+        {
+            TREE_ERROR_HANDLE(tree_simplify_MUL_(elem, count_changes));
+            break;
+        }
+        case OP_TYPE_SUM:
+        {
+            TREE_ERROR_HANDLE(tree_simplify_SUM_(elem, count_changes));
+            break;
+        }
+        case OP_TYPE_SUB:
+        {
+            TREE_ERROR_HANDLE(tree_simplify_SUB_(elem, count_changes));
+            break;
+        }
+        case OP_TYPE_DIV:
+        {
+            TREE_ERROR_HANDLE(tree_simplify_DIV_(elem, count_changes));
+            break;
+        }
+        default:
+            break;
     }
-    else if ((*elem)->lexem.data.op == OP_TYPE_MUL)
-    {
-        TREE_ERROR_HANDLE(tree_simplify_MUL_(elem, count_changes));
-    }
-    else if ((*elem)->lexem.data.op == OP_TYPE_SUM)
-    {
-        TREE_ERROR_HANDLE(tree_simplify_SUM_(elem, count_changes));
-    }
-    else if ((*elem)->lexem.data.op == OP_TYPE_SUB)
-    {
-        TREE_ERROR_HANDLE(tree_simplify_SUB_(elem, count_changes));
-    }
-    else if ((*elem)->lexem.data.op == OP_TYPE_DIV)
-    {
-        TREE_ERROR_HANDLE(tree_simplify_DIV_(elem, count_changes));
-    }
+
+#pragma GCC diagnostic pop
 
     return TREE_ERROR_SUCCESS;
 }
 
-#define _IS_ZERO_RT                                                                                 \
-        ((*tree)->rt->lexem.type == LEXEM_TYPE_NUM && ((*tree)->rt->lexem.data.num == 0))
-#define _IS_ZERO_LT                                                                                 \
-        ((*tree)->lt->lexem.type == LEXEM_TYPE_NUM && ((*tree)->lt->lexem.data.num == 0))
-#define _IS_ONE_RT                                                                                  \
-        ((*tree)->rt->lexem.type == LEXEM_TYPE_NUM && ((*tree)->rt->lexem.data.num == 1))
-#define _IS_ONE_LT                                                                                  \
-        ((*tree)->lt->lexem.type == LEXEM_TYPE_NUM && ((*tree)->lt->lexem.data.num == 1))
+static bool is_zero_rt_(const tree_elem_t* const tree)
+{
+    return tree->rt->lexem.type == LEXEM_TYPE_NUM && tree->rt->lexem.data.num == 0;
+}
+static bool is_zero_lt_(const tree_elem_t* const tree)
+{
+    return tree->lt->lexem.type == LEXEM_TYPE_NUM && tree->lt->lexem.data.num == 0;
+}
+static bool is_one_rt_ (const tree_elem_t* const tree)
+{
+    return tree->rt->lexem.type == LEXEM_TYPE_NUM && tree->rt->lexem.data.num == 1;
+}
+static bool is_one_lt_ (const tree_elem_t* const tree)
+{
+    return tree->lt->lexem.type == LEXEM_TYPE_NUM && tree->lt->lexem.data.num == 1;
+}
 
-void switch_tree_to_lt_ (tree_elem_t** tree);
-void switch_tree_to_rt_ (tree_elem_t** tree);
-void switch_tree_to_num_(tree_elem_t** tree, const double num);
+void change_tree_to_lt_ (tree_elem_t** tree);
+void change_tree_to_rt_ (tree_elem_t** tree);
+void change_tree_to_num_(tree_elem_t** tree, const num_t num);
 
-#define _TREE_TO_LT                                                                                 \
-        switch_tree_to_lt_(tree);                                                              \
-        ++*count_changes
-
-#define _TREE_TO_RT                                                                                 \
-        switch_tree_to_rt_(tree);                                                              \
-        ++*count_changes
-
-#define _TREE_TO_ZERO                                                                               \
-        switch_tree_to_num_(tree, 0);                                                          \
-        ++*count_changes
-
-#define _TREE_TO_ONE                                                                                \
-        switch_tree_to_num_(tree, 1);                                                          \
-        ++*count_changes
 
 enum TreeError tree_simplify_POW_(tree_elem_t** tree, size_t* const count_changes)
 {
     lassert(!is_invalid_ptr(tree), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (_IS_ONE_RT)
+    if ((is_one_rt_(*tree)))
     {
-        _TREE_TO_LT;
+        change_tree_to_lt_(tree);
+        ++*count_changes;
     }
-    else if (_IS_ZERO_RT)
+    else if ((is_zero_rt_(*tree)))
     {
-        _TREE_TO_ONE;
+        change_tree_to_num_(tree, 1);
+        ++*count_changes;
     }
     
     return TREE_ERROR_SUCCESS;
@@ -221,17 +230,20 @@ enum TreeError tree_simplify_MUL_(tree_elem_t** tree, size_t* const count_change
     lassert(!is_invalid_ptr(tree), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (_IS_ZERO_LT || _IS_ZERO_RT)
+    if ((is_zero_lt_(*tree)) || (is_zero_rt_(*tree)))
     {
-        _TREE_TO_ZERO;
+        change_tree_to_num_(tree, 0);
+        ++*count_changes;
     }
-    else if (_IS_ONE_RT)
+    else if ((is_one_rt_(*tree)))
     {
-        _TREE_TO_LT;
+        change_tree_to_lt_(tree);
+        ++*count_changes;
     }
-    else if (_IS_ONE_LT)
+    else if ((is_one_lt_(*tree)))
     {
-        _TREE_TO_RT;
+        change_tree_to_rt_(tree);
+        ++*count_changes;
     }
 
     return TREE_ERROR_SUCCESS;
@@ -242,13 +254,15 @@ enum TreeError tree_simplify_SUM_(tree_elem_t** tree, size_t* const count_change
     lassert(!is_invalid_ptr(tree), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (_IS_ZERO_RT)
+    if ((is_zero_rt_(*tree)))
     {
-        _TREE_TO_LT;
+        change_tree_to_lt_(tree);
+        ++*count_changes;
     }
-    else if (_IS_ZERO_LT)
+    else if ((is_zero_lt_(*tree)))
     {
-        _TREE_TO_RT;
+        change_tree_to_rt_(tree);
+        ++*count_changes;
     }
 
     return TREE_ERROR_SUCCESS;
@@ -259,11 +273,12 @@ enum TreeError tree_simplify_SUB_(tree_elem_t** tree, size_t* const count_change
     lassert(!is_invalid_ptr(tree), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (_IS_ZERO_RT)
+    if ((is_zero_rt_(*tree)))
     {
-        _TREE_TO_LT;
+        change_tree_to_lt_(tree);
+        ++*count_changes;
     }
-    else if (_IS_ZERO_LT)
+    else if ((is_zero_lt_(*tree)))
     {
         (*tree)->lexem.data.op = OP_TYPE_MUL;
         (*tree)->lt->lexem.data.num = -1;
@@ -278,15 +293,16 @@ enum TreeError tree_simplify_DIV_(tree_elem_t** tree, size_t* const count_change
     lassert(!is_invalid_ptr(tree), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (_IS_ZERO_LT)
+    if ((is_zero_lt_(*tree)))
     {
-        _TREE_TO_ZERO;
+        change_tree_to_num_(tree, 0);
+        ++*count_changes;
     }
 
     return TREE_ERROR_SUCCESS;
 }
 
-void switch_tree_to_lt_ (tree_elem_t** tree)
+void change_tree_to_lt_ (tree_elem_t** tree)
 {
     lassert(!is_invalid_ptr(tree), "");
 
@@ -298,7 +314,7 @@ void switch_tree_to_lt_ (tree_elem_t** tree)
     tree_elem_dtor_recursive(&temp);
 }
 
-void switch_tree_to_rt_ (tree_elem_t** tree)
+void change_tree_to_rt_ (tree_elem_t** tree)
 {
     lassert(!is_invalid_ptr(tree), "");
 
@@ -310,7 +326,7 @@ void switch_tree_to_rt_ (tree_elem_t** tree)
     tree_elem_dtor_recursive(&temp);
 }
 
-void switch_tree_to_num_(tree_elem_t** tree, const double num)
+void change_tree_to_num_(tree_elem_t** tree, const num_t num)
 {
     lassert(!is_invalid_ptr(tree), "");
 

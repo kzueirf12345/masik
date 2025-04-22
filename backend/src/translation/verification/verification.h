@@ -1,8 +1,7 @@
-#ifndef MASIK_BACKEND_SRC_TRANSLATION_TRANSLATION_H
-#define MASIK_BACKEND_SRC_TRANSLATION_TRANSLATION_H
+#ifndef MASIK_BACKEND_SRC_TRANSLATION_VERIFICATION_VARIFICATION_H
+#define MASIK_BACKEND_SRC_TRANSLATION_VERIFICATION_VARIFICATION_H
 
-#include "stack_on_array/libstack.h"
-#include "utils/src/tree/structs.h"
+#include <assert.h>
 
 enum TranslationError
 {
@@ -14,7 +13,7 @@ enum TranslationError
     TRANSLATION_ERROR_INVALID_LEXEM_TYPE    = 5,
     TRANSLATION_ERROR_REDECL_VAR            = 6,
 };
-static_assert(TRANSLATION_ERROR_SUCCESS == 0);
+static_assert(TRANSLATION_ERROR_SUCCESS == 0, "");
 
 const char* translation_strerror(const enum TranslationError error);
 
@@ -30,6 +29,4 @@ const char* translation_strerror(const enum TranslationError error);
         }                                                                                           \
     } while(0)
 
-enum TranslationError translate(const tree_t* const tree, FILE* out);
-
-#endif /*MASIK_BACKEND_SRC_TRANSLATION_TRANSLATION_H*/
+#endif /* MASIK_BACKEND_SRC_TRANSLATION_VERIFICATION_VARIFICATION_H */
