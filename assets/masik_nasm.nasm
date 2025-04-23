@@ -78,125 +78,138 @@ main:
 push rbp
 mov rbp, rsp
 ;;; COMMENT: num
-push qword 25
-;;; COMMENT: num
-push qword 4
+push qword 1500
 ;;; COMMENT: num
 push qword 3
-;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: var
-push qword [rbp-24]
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: var
-push qword [rbp-24]
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: pow
-pop rcx
-pop rdx
-mov rbx, 1
-test rcx, rcx
-je .ZeroPow0
-.HelpCycle0:
-  imul rbx, rdx
-loop .HelpCycle0
-.ZeroPow0:
-push rbx
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: var
-push qword [rbp-24]
-;;; COMMENT: pow
-pop rcx
-pop rdx
-mov rbx, 1
-test rcx, rcx
-je .ZeroPow1
-.HelpCycle1:
-  imul rbx, rdx
-loop .HelpCycle1
-.ZeroPow1:
-push rbx
-;;; COMMENT: var
-push qword [rbp-48]
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: var
-push qword [rbp-56]
-;;; COMMENT: var
-push qword [rbp-24]
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: sum
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: var
+;;; COMMENT: num
+push qword 22
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: num
+push qword 0
+;;; COMMENT: num
+push qword 0
+;;; COMMENT: if;;; COMMENT: var
 push qword [rbp-24]
 ;;; COMMENT: num
+push qword 18
+;;; COMMENT: great
+pop rbx
+pop rcx
+cmp rcx, rbx
+jle .NotGreat0
+ push 1
+jmp .EndGreat0
+.NotGreat0:
+push 0
+.EndGreat0:
+pop rbx
+test rbx, rbx
+je .label1
+;;; COMMENT: if->if;;; COMMENT: num
+push qword 1
+;;; COMMENT: assign
+pop qword [rbp-40]
+;;; COMMENT: if;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: num
+push qword 1000
+;;; COMMENT: great
+pop rbx
+pop rcx
+cmp rcx, rbx
+jle .NotGreat2
+ push 1
+jmp .EndGreat2
+.NotGreat2:
+push 0
+.EndGreat2:
+pop rbx
+test rbx, rbx
+je .label3
+;;; COMMENT: if->if;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: num
+push qword 5
+;;; COMMENT: div
+xor rdx, rdx
+pop rcx
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: if;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: num
+push qword 3
+;;; COMMENT: eq
+pop rbx
+pop rcx
+cmp rcx, rbx
+jne .NotEq4
+ push 1
+jmp .EndEq4
+.NotEq4:
+push 0
+.EndEq4:
+pop rbx
+test rbx, rbx
+je .label5
+;;; COMMENT: if->if;;; COMMENT: var
+push qword [rbp-56]
+;;; COMMENT: num
 push qword 2
-;;; COMMENT: pow
+;;; COMMENT: mul
+pop rbx
 pop rcx
-pop rdx
-mov rbx, 1
-test rcx, rcx
-je .ZeroPow2
-.HelpCycle2:
-  imul rbx, rdx
-loop .HelpCycle2
-.ZeroPow2:
-push rbx
+imul rcx, rbx
+push rcx
+;;; COMMENT: assign
+pop qword [rbp-48]
+;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: var
+push qword [rbp-48]
 ;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
+;;; COMMENT: assign
+pop qword [rbp-8]
+jmp .label6
+.label5:
 ;;; COMMENT: var
-push qword [rbp-32]
-;;; COMMENT: var
-push qword [rbp-40]
+push qword [rbp-56]
+;;; COMMENT: num
+push qword 50
 ;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
+;;; COMMENT: assign
+pop qword [rbp-48]
+.label6:
+jmp .label7
+.label3:
+;;; COMMENT: num
+push qword 0
+;;; COMMENT: assign
+pop qword [rbp-48]
+.label7:
+jmp .label8
+.label1:
+;;; COMMENT: num
+push qword 0
+;;; COMMENT: assign
+pop qword [rbp-40]
+;;; COMMENT: num
+push qword 0
+;;; COMMENT: assign
+pop qword [rbp-48]
+.label8:
+;;; COMMENT: var
+push qword [rbp-8]
 ;;; COMMENT: var
 push qword [rbp-48]
 ;;; COMMENT: sum
@@ -205,7 +218,42 @@ pop rcx
 add rcx, rbx
 push rcx
 ;;; COMMENT: var
-push qword [rbp-56]
+push qword [rbp-40]
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: mul
+pop rbx
+pop rcx
+imul rcx, rbx
+push rcx
+;;; COMMENT: if;;; COMMENT: var
+push qword [rbp-64]
+;;; COMMENT: num
+push qword 2000
+;;; COMMENT: great
+pop rbx
+pop rcx
+cmp rcx, rbx
+jle .NotGreat9
+ push 1
+jmp .EndGreat9
+.NotGreat9:
+push 0
+.EndGreat9:
+pop rbx
+test rbx, rbx
+je .label10
+;;; COMMENT: if->if;;; COMMENT: num
+push qword 1
+;;; COMMENT: assign
+pop qword [rbp-32]
+jmp .label11
+.label10:
+.label11:
+;;; COMMENT: var
+push qword [rbp-72]
+;;; COMMENT: var
+push qword [rbp-32]
 ;;; COMMENT: sum
 pop rbx
 pop rcx
@@ -213,13 +261,6 @@ add rcx, rbx
 push rcx
 ;;; COMMENT: var
 push qword [rbp-64]
-;;; COMMENT: sum
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-;;; COMMENT: var
-push qword [rbp-72]
 ;;; COMMENT: sum
 pop rbx
 pop rcx

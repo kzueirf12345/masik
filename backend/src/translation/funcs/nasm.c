@@ -402,22 +402,22 @@ static enum TranslationError translate_POW(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
+    const size_t pow_label_num = USE_LABEL_;
+
     fprintf(out, ";;; COMMENT: pow\n");
 
     fprintf(out, "pop rcx\n");
     fprintf(out, "pop rdx\n");
     fprintf(out, "mov rbx, 1\n");
     fprintf(out, "test rcx, rcx\n");
-    fprintf(out, "je .ZeroPow%zu\n", translator->label_num);
+    fprintf(out, "je .ZeroPow%zu\n", pow_label_num);
 
-    fprintf(out, ".HelpCycle%zu:\n", translator->label_num);
+    fprintf(out, ".HelpCycle%zu:\n", pow_label_num);
     fprintf(out, "  imul rbx, rdx\n");
-    fprintf(out, "loop .HelpCycle%zu\n", translator->label_num);
+    fprintf(out, "loop .HelpCycle%zu\n", pow_label_num);
 
-    fprintf(out, ".ZeroPow%zu:\n", translator->label_num);
+    fprintf(out, ".ZeroPow%zu:\n", pow_label_num);
     fprintf(out, "push rbx\n");
-
-    ++translator->label_num;
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -520,28 +520,33 @@ static enum TranslationError translate_IF(translator_t* const translator, const 
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
+    fprintf(out, ";;; COMMENT: if");
+
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
     size_t label_else = USE_LABEL_;
 
-    fprintf(out, "PUSH 0\n");
-    fprintf(out, "JE :label%zu\n", label_else);
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "test rbx, rbx\n");
+    fprintf(out, "je .label%zu\n", label_else);
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
+        fprintf(out, ";;; COMMENT: if->if");
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->lt, out));
 
         size_t label_end = USE_LABEL_;
-        fprintf(out, "JMP :label%zu\n", label_end);
+        fprintf(out, "jmp .label%zu\n", label_end);
 
-        fprintf(out, ":label%zu\n", label_else);
+        fprintf(out, ".label%zu:\n", label_else);
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->rt, out));
-        fprintf(out, ":label%zu\n", label_end);
+        fprintf(out, ".label%zu:\n", label_end);
     }
     else
     {
+        fprintf(out, ";;; COMMENT: if->else");
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
-        fprintf(out, ":label%zu\n", label_else);
+        fprintf(out, ".label%zu:\n", label_else);
     }
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -760,7 +765,21 @@ static enum TranslationError translate_EQ(translator_t* const translator, const 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "EQ\n");
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: eq\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "jne .NotEq%zu\n", cond_label_num);
+
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndEq%zu\n", cond_label_num);
+
+    fprintf(out, ".NotEq%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndEq%zu:\n", cond_label_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -774,7 +793,22 @@ static enum TranslationError translate_NEQ(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "NEQ\n");
+
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: neq\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "je .NotNeq%zu\n", cond_label_num);
+    
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndNeq%zu\n", cond_label_num);
+
+    fprintf(out, ".NotNeq%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndNeq%zu:\n", cond_label_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -788,7 +822,21 @@ static enum TranslationError translate_LESS(translator_t* const translator, cons
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "LESS\n");
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: less\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "jge .NotLess%zu\n", cond_label_num);
+    
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndLess%zu\n", cond_label_num);
+
+    fprintf(out, ".NotLess%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndLess%zu:\n", cond_label_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -802,7 +850,21 @@ static enum TranslationError translate_LESSEQ(translator_t* const translator, co
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "LEQ\n");
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: lesseq\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "jg .NotLesseq%zu\n", cond_label_num);
+    
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndLesseq%zu\n", cond_label_num);
+
+    fprintf(out, ".NotLesseq%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndLesseq%zu:\n", cond_label_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -816,7 +878,22 @@ static enum TranslationError translate_GREAT(translator_t* const translator, con
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "GREAT\n");
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: great\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "jle .NotGreat%zu\n", cond_label_num);
+    
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndGreat%zu\n", cond_label_num);
+
+    fprintf(out, ".NotGreat%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndGreat%zu:\n", cond_label_num);
+
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -830,7 +907,21 @@ static enum TranslationError translate_GREATEQ(translator_t* const translator, c
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "GEQ\n");
+    const size_t cond_label_num = USE_LABEL_;
+
+    fprintf(out, ";;; COMMENT: greateq\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "cmp rcx, rbx\n");
+    fprintf(out, "jl .NotGreateq%zu\n", cond_label_num);
+    
+    fprintf(out, " push 1\n");
+    fprintf(out, "jmp .EndGreateq%zu\n", cond_label_num);
+
+    fprintf(out, ".NotGreateq%zu:\n", cond_label_num);
+    fprintf(out, "push 0\n");
+
+    fprintf(out, ".EndGreateq%zu:\n", cond_label_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
