@@ -73,102 +73,159 @@ mov rdi, rax
 mov rax, 60
 syscall
 
+;;; COMMENT: main
 main:
 push rbp
 mov rbp, rsp
-push qword 30
-push qword 50
-push qword 70
-push qword 2
+;;; COMMENT: num
+push qword 25
+;;; COMMENT: num
+push qword 4
+;;; COMMENT: num
 push qword 3
-push qword 10
-push qword [rbp-32]
+;;; COMMENT: var
 push qword [rbp-8]
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-push qword [rbp-40]
+;;; COMMENT: var
 push qword [rbp-16]
-pop rbx
+;;; COMMENT: div
+xor rdx, rdx
 pop rcx
-imul rcx, rbx
-push rcx
-push qword [rbp-48]
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: var
 push qword [rbp-24]
-pop rbx
+;;; COMMENT: div
+xor rdx, rdx
 pop rcx
-imul rcx, rbx
-push rcx
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: var
+push qword [rbp-24]
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: pow
+pop rcx
+pop rdx
+mov rbx, 1
+test rcx, rcx
+je .ZeroPow0
+.HelpCycle0:
+  imul rbx, rdx
+loop .HelpCycle0
+.ZeroPow0:
+push rbx
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: var
+push qword [rbp-24]
+;;; COMMENT: pow
+pop rcx
+pop rdx
+mov rbx, 1
+test rcx, rcx
+je .ZeroPow1
+.HelpCycle1:
+  imul rbx, rdx
+loop .HelpCycle1
+.ZeroPow1:
+push rbx
+;;; COMMENT: var
+push qword [rbp-48]
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: div
+xor rdx, rdx
+pop rcx
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: var
 push qword [rbp-56]
+;;; COMMENT: var
+push qword [rbp-24]
+;;; COMMENT: div
+xor rdx, rdx
+pop rcx
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
+;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: div
+xor rdx, rdx
+pop rcx
+pop rax
+idiv rcx
+push rax
+;;; COMMENT: var
+push qword [rbp-24]
+;;; COMMENT: num
+push qword 2
+;;; COMMENT: pow
+pop rcx
+pop rdx
+mov rbx, 1
+test rcx, rcx
+je .ZeroPow2
+.HelpCycle2:
+  imul rbx, rdx
+loop .HelpCycle2
+.ZeroPow2:
+push rbx
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
+;;; COMMENT: var
+push qword [rbp-32]
+;;; COMMENT: var
+push qword [rbp-40]
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
+;;; COMMENT: var
+push qword [rbp-48]
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
+;;; COMMENT: var
+push qword [rbp-56]
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
+;;; COMMENT: var
 push qword [rbp-64]
+;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
+;;; COMMENT: var
 push qword [rbp-72]
+;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
-push qword [rbp-80]
-push qword 10
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-push qword [rbp-80]
-push qword [rbp-88]
-push qword 20
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-push qword [rbp-80]
-push qword [rbp-88]
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-push qword [rbp-96]
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-push qword [rbp-80]
-push qword 10
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-push qword [rbp-112]
-push qword [rbp-104]
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-push qword 100
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-push qword [rbp-104]
-push qword [rbp-120]
-push qword [rbp-128]
-push qword [rbp-136]
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-push qword 50
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
+;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp

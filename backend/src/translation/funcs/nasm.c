@@ -102,7 +102,8 @@ static void translator_dtor_(translator_t* const translator)
 
     stack_dtor(&translator->vars);
     stack_dtor(&translator->funcs);
-    translator->label_num = 0;
+    IF_DEBUG(translator->label_num = 0;)
+    IF_DEBUG(translator->count_var_decl = 0;)
 }
 
 
@@ -274,6 +275,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
     {
     case LEXEM_TYPE_NUM:
     {
+        fprintf(out, ";;; COMMENT: num\n");
         fprintf(out, "push qword %ld\n", elem->lexem.data.num);
         break;
     }
@@ -290,6 +292,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
         // {
         //     fprintf(out, "mov %s, %ld\n", reg_to_str(finded_var->reg), elem->lexem.data.num);
         // }
+        fprintf(out, ";;; COMMENT: var\n");
         fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var)*8);
         break;
     }
@@ -326,6 +329,7 @@ static enum TranslationError translate_SUM(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
+    fprintf(out, ";;; COMMENT: sum\n");
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "add rcx, rbx\n");
@@ -343,6 +347,7 @@ static enum TranslationError translate_SUB(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
+    fprintf(out, ";;; COMMENT: sub\n");
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "sub rcx, rbx\n");
@@ -360,6 +365,7 @@ static enum TranslationError translate_MUL(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
+    fprintf(out, ";;; COMMENT: mul\n");
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "imul rcx, rbx\n");
@@ -377,7 +383,12 @@ static enum TranslationError translate_DIV(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "DIV\n");
+    fprintf(out, ";;; COMMENT: div\n");
+    fprintf(out, "xor rdx, rdx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "pop rax\n");
+    fprintf(out, "idiv rcx\n");
+    fprintf(out, "push rax\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -391,7 +402,22 @@ static enum TranslationError translate_POW(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "POW\n");
+    fprintf(out, ";;; COMMENT: pow\n");
+
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "pop rdx\n");
+    fprintf(out, "mov rbx, 1\n");
+    fprintf(out, "test rcx, rcx\n");
+    fprintf(out, "je .ZeroPow%zu\n", translator->label_num);
+
+    fprintf(out, ".HelpCycle%zu:\n", translator->label_num);
+    fprintf(out, "  imul rbx, rdx\n");
+    fprintf(out, "loop .HelpCycle%zu\n", translator->label_num);
+
+    fprintf(out, ".ZeroPow%zu:\n", translator->label_num);
+    fprintf(out, "push rbx\n");
+
+    ++translator->label_num;
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -443,6 +469,7 @@ static enum TranslationError translate_ASSIGNMENT(translator_t* const translator
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
+    fprintf(out, ";;; COMMENT: assign\n");
     fprintf(out, "pop qword [rbp-%ld]\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -458,8 +485,8 @@ static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const trans
 
     CHECK_UNDECLD_VAR_(elem->lt);
     STACK_ERROR_HANDLE_(stack_push(&translator->vars, &elem->lt->lexem.data.var));
-    ++translator->count_var_decl;
-    size_t var_ind = stack_size(translator->vars) - 1;
+    // ++translator->count_var_decl;
+    // size_t var_ind = stack_size(translator->vars) - 1;
 
     if (elem->rt)
     {
@@ -467,6 +494,7 @@ static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const trans
     }
     else
     {
+        fprintf(out, ";;; COMMENT: decl assign 0\n");
         fprintf(out, "push 0\n");
     }
     // fprintf(out, "sub rsp, 8\n");
@@ -914,6 +942,7 @@ static enum TranslationError translate_MAIN(translator_t* const translator, cons
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
     translator->count_var_decl = 0;
 
+    fprintf(out, ";;; COMMENT: main\n");
     fprintf(out, "main:\n");
     fprintf(out, "push rbp\n");
     fprintf(out, "mov rbp, rsp\n");
@@ -969,6 +998,7 @@ static enum TranslationError translate_RET(translator_t* const translator, const
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
+    fprintf(out, ";;; COMMENT: ret\n");
     fprintf(out, "pop rax\n");
     fprintf(out, "mov rsp, rbp\n");
     fprintf(out, "pop rbp\n");
