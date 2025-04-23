@@ -275,7 +275,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
     {
     case LEXEM_TYPE_NUM:
     {
-        fprintf(out, ";;; COMMENT: num\n");
+        IF_DEBUG(fprintf(out, ";;; COMMENT: num\n");)
         fprintf(out, "push qword %ld\n", elem->lexem.data.num);
         break;
     }
@@ -292,7 +292,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
         // {
         //     fprintf(out, "mov %s, %ld\n", reg_to_str(finded_var->reg), elem->lexem.data.num);
         // }
-        fprintf(out, ";;; COMMENT: var\n");
+        IF_DEBUG(fprintf(out, ";;; COMMENT: var\n");)
         fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var)*8);
         break;
     }
@@ -329,7 +329,7 @@ static enum TranslationError translate_SUM(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, ";;; COMMENT: sum\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: sum\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "add rcx, rbx\n");
@@ -347,7 +347,7 @@ static enum TranslationError translate_SUB(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, ";;; COMMENT: sub\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: sub\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "sub rcx, rbx\n");
@@ -365,7 +365,7 @@ static enum TranslationError translate_MUL(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, ";;; COMMENT: mul\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: mul\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "imul rcx, rbx\n");
@@ -383,7 +383,7 @@ static enum TranslationError translate_DIV(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, ";;; COMMENT: div\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: div\n");)
     fprintf(out, "xor rdx, rdx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "pop rax\n");
@@ -404,7 +404,7 @@ static enum TranslationError translate_POW(translator_t* const translator, const
 
     const size_t pow_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: pow\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: pow\n");)
 
     fprintf(out, "pop rcx\n");
     fprintf(out, "pop rdx\n");
@@ -469,7 +469,7 @@ static enum TranslationError translate_ASSIGNMENT(translator_t* const translator
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, ";;; COMMENT: assign\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: assign\n");)
     fprintf(out, "pop qword [rbp-%ld]\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -494,7 +494,7 @@ static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const trans
     }
     else
     {
-        fprintf(out, ";;; COMMENT: decl assign 0\n");
+        IF_DEBUG(fprintf(out, ";;; COMMENT: decl assign 0\n");)
         fprintf(out, "push 0\n");
     }
     // fprintf(out, "sub rsp, 8\n");
@@ -520,7 +520,7 @@ static enum TranslationError translate_IF(translator_t* const translator, const 
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
-    fprintf(out, ";;; COMMENT: if");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: if\n");)
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
@@ -532,7 +532,7 @@ static enum TranslationError translate_IF(translator_t* const translator, const 
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
-        fprintf(out, ";;; COMMENT: if->if");
+        IF_DEBUG(fprintf(out, ";;; COMMENT: if->if\n");)
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->lt, out));
 
         size_t label_end = USE_LABEL_;
@@ -544,7 +544,7 @@ static enum TranslationError translate_IF(translator_t* const translator, const 
     }
     else
     {
-        fprintf(out, ";;; COMMENT: if->else");
+        IF_DEBUG(fprintf(out, ";;; COMMENT: if->else\n");)
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
         fprintf(out, ".label%zu:\n", label_else);
     }
@@ -610,20 +610,22 @@ static enum TranslationError translate_WHILE(translator_t* const translator, con
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
-        fprintf(out, "PUSH 0\n");
+        fprintf(out, "pop rbx\n");
+        fprintf(out, "test rbx, rbx\n");
         label_else = USE_LABEL_;
-        fprintf(out, "JE :label%zu\n", label_else);
+        fprintf(out, "je .label%zu\n", label_else);
         label_body = USE_LABEL_;
-        fprintf(out, "JMP :label%zu\n", label_body);
+        fprintf(out, "jmp .label%zu\n", label_body);
     }
 
     label_condition = USE_LABEL_;
-    fprintf(out, ":label%zu\n", label_condition);
+    fprintf(out, ".label%zu:\n", label_condition);
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
-    fprintf(out, "PUSH 0\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "test rbx, rbx\n");
     label_end = USE_LABEL_;
-    fprintf(out, "JE :label%zu\n", label_end);
-    fprintf(out, ":label%zu\n", label_body);
+    fprintf(out, "je .label%zu\n", label_end);
+    fprintf(out, ".label%zu:\n", label_body);
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
@@ -633,15 +635,15 @@ static enum TranslationError translate_WHILE(translator_t* const translator, con
     {
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
     }
-    fprintf(out, "JMP :label%zu\n", label_condition);
+    fprintf(out, "jmp .label%zu\n", label_condition);
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
-        fprintf(out, ":label%zu\n", label_else);
+        fprintf(out, ".label%zu:\n", label_else);
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->rt, out));
     }
 
-    fprintf(out, ":label%zu\n", label_end);
+    fprintf(out, ".label%zu:\n", label_end);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -675,6 +677,14 @@ static enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const transl
     lassert(!is_invalid_ptr(out), "");
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
+
+    // size_t* var = NULL;
+    // CHECK_DECLD_VAR_(var, elem->lt);
+
+    // TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
+
+    // fprintf(out, "pop rbx\n");
+    // fprintf(out, "add qword [rbp-%ld], rbx\n", VAR_IND_(var)*8);
 
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
@@ -767,7 +777,7 @@ static enum TranslationError translate_EQ(translator_t* const translator, const 
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: eq\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: eq\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -796,7 +806,7 @@ static enum TranslationError translate_NEQ(translator_t* const translator, const
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: neq\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: neq\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -824,7 +834,7 @@ static enum TranslationError translate_LESS(translator_t* const translator, cons
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: less\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: less\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -852,7 +862,7 @@ static enum TranslationError translate_LESSEQ(translator_t* const translator, co
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: lesseq\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: lesseq\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -880,7 +890,7 @@ static enum TranslationError translate_GREAT(translator_t* const translator, con
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: great\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: great\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -909,7 +919,7 @@ static enum TranslationError translate_GREATEQ(translator_t* const translator, c
 
     const size_t cond_label_num = USE_LABEL_;
 
-    fprintf(out, ";;; COMMENT: greateq\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: greateq\n");)
     fprintf(out, "pop rbx\n");
     fprintf(out, "pop rcx\n");
     fprintf(out, "cmp rcx, rbx\n");
@@ -1033,7 +1043,7 @@ static enum TranslationError translate_MAIN(translator_t* const translator, cons
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
     translator->count_var_decl = 0;
 
-    fprintf(out, ";;; COMMENT: main\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: main\n");)
     fprintf(out, "main:\n");
     fprintf(out, "push rbp\n");
     fprintf(out, "mov rbp, rsp\n");
@@ -1089,7 +1099,7 @@ static enum TranslationError translate_RET(translator_t* const translator, const
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
-    fprintf(out, ";;; COMMENT: ret\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: ret\n");)
     fprintf(out, "pop rax\n");
     fprintf(out, "mov rsp, rbp\n");
     fprintf(out, "pop rbp\n");

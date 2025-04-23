@@ -8,89 +8,65 @@ POP R1
 OUT
 HLT
 :main
-PUSH 1500
+PUSH 0
 POP [0+R1]
-PUSH 3
+PUSH 5
 POP [1+R1]
-PUSH 22
+PUSH 0
 POP [2+R1]
-PUSH 1
-POP [3+R1]
-PUSH 0
-POP [4+R1]
-PUSH 0
-POP [5+R1]
 PUSH [2+R1]
-PUSH 18
-GREAT
+PUSH [1+R1]
+LESS
 PUSH 0
 JE :label0
-PUSH 1
-POP [4+R1]
-PUSH [0+R1]
-PUSH 1000
-GREAT
-PUSH 0
-JE :label1
-PUSH [0+R1]
-PUSH 5
-DIV
-POP [6+R1]
-PUSH [1+R1]
-PUSH 3
-EQ
-PUSH 0
-JE :label2
-PUSH [6+R1]
-PUSH 2
-MUL
-POP [5+R1]
-PUSH [0+R1]
-PUSH [5+R1]
-ADD
-POP [0+R1]
-JMP :label3
+JMP :label1
 :label2
-PUSH [6+R1]
-PUSH 50
-ADD
-POP [5+R1]
-:label3
-JMP :label4
-:label1
-PUSH 0
-POP [5+R1]
-:label4
-JMP :label5
-:label0
-PUSH 0
-POP [4+R1]
-PUSH 0
-POP [5+R1]
-:label5
-PUSH [0+R1]
-PUSH [5+R1]
-ADD
-POP [7+R1]
-PUSH [4+R1]
+PUSH [2+R1]
 PUSH [1+R1]
-MUL
-POP [8+R1]
-PUSH [7+R1]
-PUSH 2000
-GREAT
+LESS
 PUSH 0
-JE :label6
+JE :label3
+:label1
 PUSH 1
 POP [3+R1]
-JMP :label7
+PUSH 5
+POP [4+R1]
+PUSH [4+R1]
+PUSH 1
+GREAT
+PUSH 0
+JE :label4
+JMP :label5
 :label6
+PUSH [4+R1]
+PUSH 1
+GREAT
+PUSH 0
+JE :label7
+:label5
+PUSH [3+R1]
+PUSH [4+R1]
+MUL
+POP [3+R1]
+PUSH [4+R1]
+PUSH 1
+SUB
+POP [4+R1]
+JMP :label6
+:label4
 :label7
-PUSH [8+R1]
+PUSH [0+R1]
 PUSH [3+R1]
 ADD
-PUSH [7+R1]
+POP [0+R1]
+PUSH [2+R1]
+PUSH 1
 ADD
+POP [2+R1]
+JMP :label2
+:label0
+:label3
+PUSH [0+R1]
 POP R2
 POP R1
 PUSH R2

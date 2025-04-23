@@ -78,180 +78,116 @@ main:
 push rbp
 mov rbp, rsp
 ;;; COMMENT: num
-push qword 1500
-;;; COMMENT: num
-push qword 3
-;;; COMMENT: num
-push qword 22
-;;; COMMENT: num
-push qword 1
-;;; COMMENT: num
 push qword 0
 ;;; COMMENT: num
+push qword 5
+;;; COMMENT: num
 push qword 0
-;;; COMMENT: if;;; COMMENT: var
+;;; COMMENT: var
 push qword [rbp-24]
-;;; COMMENT: num
-push qword 18
-;;; COMMENT: great
+;;; COMMENT: var
+push qword [rbp-16]
+;;; COMMENT: less
 pop rbx
 pop rcx
 cmp rcx, rbx
-jle .NotGreat0
+jge .NotLess0
  push 1
-jmp .EndGreat0
-.NotGreat0:
+jmp .EndLess0
+.NotLess0:
 push 0
-.EndGreat0:
+.EndLess0:
 pop rbx
 test rbx, rbx
 je .label1
-;;; COMMENT: if->if;;; COMMENT: num
-push qword 1
-;;; COMMENT: assign
-pop qword [rbp-40]
-;;; COMMENT: if;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: num
-push qword 1000
-;;; COMMENT: great
-pop rbx
-pop rcx
-cmp rcx, rbx
-jle .NotGreat2
- push 1
-jmp .EndGreat2
-.NotGreat2:
-push 0
-.EndGreat2:
-pop rbx
-test rbx, rbx
-je .label3
-;;; COMMENT: if->if;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: num
-push qword 5
-;;; COMMENT: div
-xor rdx, rdx
-pop rcx
-pop rax
-idiv rcx
-push rax
-;;; COMMENT: if;;; COMMENT: var
+jmp .label2
+.label3:
+;;; COMMENT: var
+push qword [rbp-24]
+;;; COMMENT: var
 push qword [rbp-16]
-;;; COMMENT: num
-push qword 3
-;;; COMMENT: eq
+;;; COMMENT: less
 pop rbx
 pop rcx
 cmp rcx, rbx
-jne .NotEq4
+jge .NotLess4
  push 1
-jmp .EndEq4
-.NotEq4:
+jmp .EndLess4
+.NotLess4:
 push 0
-.EndEq4:
+.EndLess4:
 pop rbx
 test rbx, rbx
 je .label5
-;;; COMMENT: if->if;;; COMMENT: var
-push qword [rbp-56]
+.label2:
 ;;; COMMENT: num
-push qword 2
-;;; COMMENT: mul
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-48]
-;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: var
-push qword [rbp-48]
-;;; COMMENT: sum
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-8]
-jmp .label6
-.label5:
-;;; COMMENT: var
-push qword [rbp-56]
+push qword 1
 ;;; COMMENT: num
-push qword 50
-;;; COMMENT: sum
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-48]
-.label6:
-jmp .label7
-.label3:
-;;; COMMENT: num
-push qword 0
-;;; COMMENT: assign
-pop qword [rbp-48]
-.label7:
-jmp .label8
-.label1:
-;;; COMMENT: num
-push qword 0
-;;; COMMENT: assign
-pop qword [rbp-40]
-;;; COMMENT: num
-push qword 0
-;;; COMMENT: assign
-pop qword [rbp-48]
-.label8:
-;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: var
-push qword [rbp-48]
-;;; COMMENT: sum
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
+push qword 5
 ;;; COMMENT: var
 push qword [rbp-40]
-;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: mul
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-;;; COMMENT: if;;; COMMENT: var
-push qword [rbp-64]
 ;;; COMMENT: num
-push qword 2000
+push qword 1
 ;;; COMMENT: great
 pop rbx
 pop rcx
 cmp rcx, rbx
-jle .NotGreat9
+jle .NotGreat6
  push 1
-jmp .EndGreat9
-.NotGreat9:
+jmp .EndGreat6
+.NotGreat6:
 push 0
-.EndGreat9:
+.EndGreat6:
 pop rbx
 test rbx, rbx
-je .label10
-;;; COMMENT: if->if;;; COMMENT: num
+je .label7
+jmp .label8
+.label9:
+;;; COMMENT: var
+push qword [rbp-40]
+;;; COMMENT: num
 push qword 1
+;;; COMMENT: great
+pop rbx
+pop rcx
+cmp rcx, rbx
+jle .NotGreat10
+ push 1
+jmp .EndGreat10
+.NotGreat10:
+push 0
+.EndGreat10:
+pop rbx
+test rbx, rbx
+je .label11
+.label8:
+;;; COMMENT: var
+push qword [rbp-32]
+;;; COMMENT: var
+push qword [rbp-40]
+;;; COMMENT: mul
+pop rbx
+pop rcx
+imul rcx, rbx
+push rcx
 ;;; COMMENT: assign
 pop qword [rbp-32]
-jmp .label11
-.label10:
+;;; COMMENT: var
+push qword [rbp-40]
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: sub
+pop rbx
+pop rcx
+sub rcx, rbx
+push rcx
+;;; COMMENT: assign
+pop qword [rbp-40]
+jmp .label9
+.label7:
 .label11:
 ;;; COMMENT: var
-push qword [rbp-72]
+push qword [rbp-8]
 ;;; COMMENT: var
 push qword [rbp-32]
 ;;; COMMENT: sum
@@ -259,13 +195,24 @@ pop rbx
 pop rcx
 add rcx, rbx
 push rcx
+;;; COMMENT: assign
+pop qword [rbp-8]
 ;;; COMMENT: var
-push qword [rbp-64]
+push qword [rbp-24]
+;;; COMMENT: num
+push qword 1
 ;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
+;;; COMMENT: assign
+pop qword [rbp-24]
+jmp .label3
+.label1:
+.label5:
+;;; COMMENT: var
+push qword [rbp-8]
 ;;; COMMENT: ret
 pop rax
 mov rsp, rbp
