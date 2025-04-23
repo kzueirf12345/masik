@@ -67,6 +67,14 @@ JMP :label2
 :label0
 :label3
 PUSH [0+R1]
+PUSH 2
+POW
+POP [0+R1]
+PUSH [0+R1]
+PUSH 100
+DIV
+POP [0+R1]
+PUSH [0+R1]
 POP R2
 POP R1
 PUSH R2

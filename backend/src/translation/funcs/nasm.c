@@ -284,14 +284,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
     {
         size_t* finded_var = NULL;
         CHECK_DECLD_VAR_(finded_var, elem);
-        // if (translator->free_reg == REG_STACK)
-        // {
-        //     fprintf(out, "push %ld\n", elem->lexem.data.num);
-        // }
-        // else
-        // {
-        //     fprintf(out, "mov %s, %ld\n", reg_to_str(finded_var->reg), elem->lexem.data.num);
-        // }
+
         IF_DEBUG(fprintf(out, ";;; COMMENT: var\n");)
         fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var)*8);
         break;
@@ -607,6 +600,8 @@ static enum TranslationError translate_WHILE(translator_t* const translator, con
     size_t label_else       = 0;
     size_t label_end        = 0;
 
+    IF_DEBUG(fprintf(out, ";;; COMMENT: while\n");)
+
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
@@ -625,6 +620,7 @@ static enum TranslationError translate_WHILE(translator_t* const translator, con
     fprintf(out, "test rbx, rbx\n");
     label_end = USE_LABEL_;
     fprintf(out, "je .label%zu\n", label_end);
+    IF_DEBUG(fprintf(out, ";;; COMMENT: while->body\n");)
     fprintf(out, ".label%zu:\n", label_body);
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
@@ -639,6 +635,7 @@ static enum TranslationError translate_WHILE(translator_t* const translator, con
 
     if (elem->rt->lexem.type == LEXEM_TYPE_OP && elem->rt->lexem.data.op == OP_TYPE_ELSE)
     {
+        IF_DEBUG(fprintf(out, ";;; COMMENT: while->else\n");)
         fprintf(out, ".label%zu:\n", label_else);
         TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->rt, out));
     }
@@ -659,13 +656,24 @@ static enum TranslationError translate_POW_ASSIGNMENT(translator_t* const transl
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
 
-    fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(var));
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "POW\n");
+    const size_t pow_label_num = USE_LABEL_;
 
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    IF_DEBUG(fprintf(out, ";;; COMMENT: pow assign\n");)
+
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "mov rbx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rdx, 1\n");
+    fprintf(out, "test rcx, rcx\n");
+    fprintf(out, "je .ZeroPow%zu\n", pow_label_num);
+
+    fprintf(out, ".HelpCycle%zu:\n", pow_label_num);
+    fprintf(out, "  imul rdx, rbx\n", VAR_IND_(var)*8);
+    fprintf(out, "loop .HelpCycle%zu\n", pow_label_num);
+
+    fprintf(out, ".ZeroPow%zu:\n", pow_label_num);
+    fprintf(out, "mov qword [rbp-%ld], rdx\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -678,24 +686,16 @@ static enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const transl
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    // size_t* var = NULL;
-    // CHECK_DECLD_VAR_(var, elem->lt);
-
-    // TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
-
-    // fprintf(out, "pop rbx\n");
-    // fprintf(out, "add qword [rbp-%ld], rbx\n", VAR_IND_(var)*8);
-
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
 
-    fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(var));
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "ADD\n");
-
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    IF_DEBUG(fprintf(out, ";;; COMMENT: sum assign\n");)
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "add rcx, rbx\n");
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -711,13 +711,13 @@ static enum TranslationError translate_SUB_ASSIGNMENT(translator_t* const transl
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
 
-    fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(var));
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "SUB\n");
-
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    IF_DEBUG(fprintf(out, ";;; COMMENT: sub assign\n");)
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "sub rcx, rbx\n");
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -733,13 +733,13 @@ static enum TranslationError translate_MUL_ASSIGNMENT(translator_t* const transl
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
 
-    fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(var));
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "MUL\n");
-
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    IF_DEBUG(fprintf(out, ";;; COMMENT: mul assign\n");)
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "imul rcx, rbx\n");
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -755,13 +755,14 @@ static enum TranslationError translate_DIV_ASSIGNMENT(translator_t* const transl
     size_t* var = NULL;
     CHECK_DECLD_VAR_(var, elem->lt);
 
-    fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(var));
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "DIV\n");
-
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    IF_DEBUG(fprintf(out, ";;; COMMENT: div assign\n");)
+    fprintf(out, "xor rdx, rdx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "mov rax, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "idiv rcx\n");
+    fprintf(out, "mov qword [rbp-%ld], rax\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }

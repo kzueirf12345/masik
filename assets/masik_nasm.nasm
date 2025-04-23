@@ -83,6 +83,7 @@ push qword 0
 push qword 5
 ;;; COMMENT: num
 push qword 0
+;;; COMMENT: while
 ;;; COMMENT: var
 push qword [rbp-24]
 ;;; COMMENT: var
@@ -119,11 +120,13 @@ push 0
 pop rbx
 test rbx, rbx
 je .label5
+;;; COMMENT: while->body
 .label2:
 ;;; COMMENT: num
 push qword 1
 ;;; COMMENT: num
 push qword 5
+;;; COMMENT: while
 ;;; COMMENT: var
 push qword [rbp-40]
 ;;; COMMENT: num
@@ -160,57 +163,65 @@ push 0
 pop rbx
 test rbx, rbx
 je .label11
+;;; COMMENT: while->body
 .label8:
 ;;; COMMENT: var
-push qword [rbp-32]
-;;; COMMENT: var
 push qword [rbp-40]
-;;; COMMENT: mul
+;;; COMMENT: mul assign
 pop rbx
-pop rcx
+mov rcx, qword [rbp-32]
 imul rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-32]
-;;; COMMENT: var
-push qword [rbp-40]
+mov qword [rbp-32], rcx
 ;;; COMMENT: num
 push qword 1
-;;; COMMENT: sub
+;;; COMMENT: sub assign
 pop rbx
-pop rcx
+mov rcx, qword [rbp-40]
 sub rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-40]
+mov qword [rbp-40], rcx
 jmp .label9
+;;; COMMENT: while->else
 .label7:
 .label11:
 ;;; COMMENT: var
-push qword [rbp-8]
-;;; COMMENT: var
 push qword [rbp-32]
-;;; COMMENT: sum
+;;; COMMENT: sum assign
 pop rbx
-pop rcx
+mov rcx, qword [rbp-8]
 add rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-8]
-;;; COMMENT: var
-push qword [rbp-24]
+mov qword [rbp-8], rcx
 ;;; COMMENT: num
 push qword 1
-;;; COMMENT: sum
+;;; COMMENT: sum assign
 pop rbx
-pop rcx
+mov rcx, qword [rbp-24]
 add rcx, rbx
-push rcx
-;;; COMMENT: assign
-pop qword [rbp-24]
+mov qword [rbp-24], rcx
 jmp .label3
+;;; COMMENT: while->else
 .label1:
 .label5:
+;;; COMMENT: num
+push qword 2
+;;; COMMENT: pow assign
+pop rcx
+mov rbx, qword [rbp-8]
+mov rdx, 1
+test rcx, rcx
+je .ZeroPow12
+.HelpCycle12:
+  imul rdx, rbx
+loop .HelpCycle12
+.ZeroPow12:
+mov qword [rbp-8], rdx
+;;; COMMENT: num
+push qword 100
+;;; COMMENT: div assign
+xor rdx, rdx
+pop rcx
+mov rax, qword [rbp-8]
+idiv rcx
+mov qword [rbp-8], rax
 ;;; COMMENT: var
 push qword [rbp-8]
 ;;; COMMENT: ret
