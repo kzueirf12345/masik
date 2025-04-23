@@ -1,4 +1,3 @@
-#include "translation/structs.h"
 #include "utils/utils.h"
 #include "stack_on_array/libstack.h"
 #include "translation/funcs/funcs.h"
@@ -14,6 +13,20 @@
             return TRANSLATION_ERROR_STACK;                                                         \
         }                                                                                           \
     } while(0)
+
+typedef struct Func
+{
+    size_t num;
+    size_t count_args;
+} func_t;
+
+typedef struct Translator
+{
+    stack_key_t vars;
+    stack_key_t funcs;
+    size_t label_num;
+    size_t count_var_decl;
+} translator_t;
 
 static enum TranslationError translator_ctor_(translator_t* const translator)
 {

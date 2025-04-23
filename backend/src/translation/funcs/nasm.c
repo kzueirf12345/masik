@@ -1,4 +1,5 @@
-#include "translation/structs.h"
+#include <stdbool.h>
+
 #include "utils/utils.h"
 #include "stack_on_array/libstack.h"
 #include "translation/funcs/funcs.h"
@@ -15,6 +16,74 @@
         }                                                                                           \
     } while(0)
 
+#define REG_CNT 16
+
+enum Reg 
+{
+    REG_ZERO       = 0,
+    REG_RAX        = 1,
+    REG_RBX        = 2,
+    REG_RCX        = 3,
+    REG_RDX        = 4,
+    REG_RSI        = 5,
+    REG_RDI        = 6,
+    REG_R8         = 7,
+    REG_R9         = 8,
+    REG_R10        = 9,
+    REG_R11        = 10,
+    REG_R12        = 11,
+    REG_R13        = 12,
+    REG_R14        = 13,
+    REG_R15        = 14,
+    REG_STACK      = 15,
+};
+static_assert(REG_CNT == REG_STACK + 1, "");
+
+static const char* reg_to_str(const enum Reg reg)
+{
+    switch (reg)
+    {
+    case REG_RAX:  return "rax";
+    case REG_RBX:  return "rbx";
+    case REG_RCX:  return "rcx";
+    case REG_RDX:  return "rdx";
+    case REG_RSI:  return "rsi";
+    case REG_RDI:  return "rdi";
+    case REG_R8:   return "r8";
+    case REG_R9:   return "r9";
+    case REG_R10:  return "r10";
+    case REG_R11:  return "r11";
+    case REG_R12:  return "r12";
+    case REG_R13:  return "r13";
+    case REG_R14:  return "r14";
+    case REG_R15:  return "r15";
+        
+    case REG_ZERO:
+    case REG_STACK:
+    default:
+        fprintf(stderr, "Invalid enum for reg_to_str\n");
+        return NULL;
+    }
+
+    fprintf(stderr, "Invalid enum for reg_to_str\n");
+    return NULL;
+}
+
+typedef struct Func
+{
+    size_t num;
+    size_t count_args;
+} func_t;
+
+typedef struct Translator
+{
+    stack_key_t vars;
+    stack_key_t funcs;
+    size_t label_num;
+    size_t count_var_decl;
+    
+} translator_t;
+ 
 static enum TranslationError translator_ctor_(translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
@@ -57,18 +126,84 @@ enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 
     translator_t translator = {};
     TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
-
+    fprintf(out, "section .data\n");
+    fprintf(out, "HexTable db \"0123456789ABCDEF\"\n\n");
     fprintf(out, "section .text\n");
     fprintf(out, "global _start\n\n");
+
+    fprintf(out, ";;; ---------------------------------------------\n");
+    fprintf(out, ";;; Descript:   print num\n");
+    fprintf(out, ";;; Entry:      rax  = num\n");
+    fprintf(out, ";;;             r11 = base\n");
+    fprintf(out, ";;; Exit:       rax = exit code\n");
+    fprintf(out, ";;; Destroy:    rcx, rdx, rsi, rdi, r11\n");
+    fprintf(out, ";;; ---------------------------------------------\n");
+    fprintf(out, "PrintNum:\n");
+    fprintf(out, "    mov rdi, rax                            ; rdi - num\n");
+    fprintf(out, "\n");
+    fprintf(out, "    xor rcx, rcx                            ; rcx - string size\n");
+    fprintf(out, "\n");
+    fprintf(out, ";;; check to zero and negative\n");
+    fprintf(out, "    test rax, rax\n");
+    fprintf(out, "js .Negative\n");
+    fprintf(out, "jne .Convertion\n");
+    fprintf(out, ";;; push '0' in stack\n");
+    fprintf(out, "    dec rsp\n");
+    fprintf(out, "    mov byte [rsp], '0'\n");
+    fprintf(out, "    inc rcx                                 ; ++size\n");
+    fprintf(out, "jmp .Print\n");
+    fprintf(out, "\n");
+    fprintf(out, ".Negative:\n");
+    fprintf(out, "    neg rax                                 ; num = -num\n");
+    fprintf(out, "\n");
+    fprintf(out, ".Convertion:\n");
+    fprintf(out, "    xor rdx, rdx                            ; rdx = 0 (in particular edx)\n");
+    fprintf(out, "    div r11                                 ; [rax, rdx] = rdx:rax / r11\n");
+    fprintf(out, "    mov dl, byte [HexTable + rdx]           ; dl = HexTable[dl]\n");
+    fprintf(out, ";;; push dl (digit) in stack\n");
+    fprintf(out, "    dec rsp\n");
+    fprintf(out, "    mov byte [rsp], dl\n");
+    fprintf(out, "\n");
+    fprintf(out, "    inc rcx                                 ; ++size\n");
+    fprintf(out, "    test rax, rax\n");
+    fprintf(out, "jne .Convertion\n");
+    fprintf(out, "\n");
+    fprintf(out, ";;; check to negative (add '-')\n");
+    fprintf(out, "    test rdi, rdi\n");
+    fprintf(out, "jns .Print\n");
+    fprintf(out, ";;; push '-' in stack\n");
+    fprintf(out, "    dec rsp\n");
+    fprintf(out, "    mov byte [rsp], '-'\n");
+    fprintf(out, "    inc rcx                                 ; ++size\n");
+    fprintf(out, "\n");
+    fprintf(out, ".Print:\n");
+    fprintf(out, "\n");
+    fprintf(out, "    mov rdx, rcx                            ; rdx - size string\n");
+    fprintf(out, "    mov rsi, rsp                            ; rsi - addr string for print\n");
+    fprintf(out, "    mov rdi, 1\n");
+    fprintf(out, "    mov rax, 1\n");
+    fprintf(out, "    syscall\n");
+    fprintf(out, "    add rsp, rdx                            ; clean stack (rdx - size string)\n");
+    fprintf(out, "    test rax, rax                           ; check error\n");
+    fprintf(out, "je .Exit\n");
+    fprintf(out, "\n");
+    fprintf(out, ".ExitSuccess:\n");
+    fprintf(out, "    xor rax, rax                            ; NO ERROR\n");
+    fprintf(out, ".Exit:\n");
+    fprintf(out, "ret\n\n");
+
     fprintf(out, "_start:\n");
+    fprintf(out, "call main\n");
+    fprintf(out, "mov r11, 10\n");
+    fprintf(out, "call PrintNum\n");
 
-    // TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
-    //                          translator_dtor_(&translator);
-    // );
-
+    fprintf(out, "mov rdi, rax\n");
     fprintf(out, "mov rax, 60\n");
-    fprintf(out, "mov rdi, 0\n");
-    fprintf(out, "syscall\n");
+    fprintf(out, "syscall\n\n");
+
+    TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
+                             translator_dtor_(&translator);
+    );
 
     translator_dtor_(&translator);
 
@@ -77,7 +212,7 @@ enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 
 #define CHECK_DECLD_VAR_(result_, elem_)                                                            \
     do {                                                                                            \
-        if (!(result_ = (size_t*)stack_find(translator->vars, &elem_->lexem.data.var, NULL)))       \
+        if (!(result_ = (size_t*)stack_find(translator->vars, &elem_->lexem.data.var, NULL)))        \
         {                                                                                           \
             fprintf(stderr, "Use undeclarated var with %zu num\n", elem_->lexem.data.var);          \
             return TRANSLATION_ERROR_UNDECL_VAR;                                                    \
@@ -114,9 +249,13 @@ enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 
 
 #define VAR_IND_(var_)                                                                              \
-        (var_ - (size_t*)stack_begin(translator->vars))
+        (var_ - (size_t*)stack_begin(translator->vars) + 1)
+
+// #define INC_FREE_REG                                                                                \
+//         translator->free_reg += (translator->free_reg != REG_STACK)
     
-#define USE_LABEL_ (translator->label_num++)
+#define USE_LABEL_                                                                                  \
+        (translator->label_num++)
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
         case num_: TRANSLATION_ERROR_HANDLE(translate_##name_(translator, elem, out)); break;
@@ -135,7 +274,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
     {
     case LEXEM_TYPE_NUM:
     {
-        fprintf(out, "PUSH %ld\n", elem->lexem.data.num);
+        fprintf(out, "push qword %ld\n", elem->lexem.data.num);
         break;
     }
 
@@ -143,7 +282,15 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
     {
         size_t* finded_var = NULL;
         CHECK_DECLD_VAR_(finded_var, elem);
-        fprintf(out, "PUSH [%ld+R1]\n", VAR_IND_(finded_var));
+        // if (translator->free_reg == REG_STACK)
+        // {
+        //     fprintf(out, "push %ld\n", elem->lexem.data.num);
+        // }
+        // else
+        // {
+        //     fprintf(out, "mov %s, %ld\n", reg_to_str(finded_var->reg), elem->lexem.data.num);
+        // }
+        fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var)*8);
         break;
     }
 
@@ -179,7 +326,10 @@ static enum TranslationError translate_SUM(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "ADD\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "add rcx, rbx\n");
+    fprintf(out, "push rcx\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -193,7 +343,10 @@ static enum TranslationError translate_SUB(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "SUB\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "sub rcx, rbx\n");
+    fprintf(out, "push rcx\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -207,7 +360,10 @@ static enum TranslationError translate_MUL(translator_t* const translator, const
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "MUL\n");
+    fprintf(out, "pop rbx\n");
+    fprintf(out, "pop rcx\n");
+    fprintf(out, "imul rcx, rbx\n");
+    fprintf(out, "push rcx\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -287,7 +443,7 @@ static enum TranslationError translate_ASSIGNMENT(translator_t* const translator
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "POP [%ld+R1]\n", VAR_IND_(var));
+    fprintf(out, "pop qword [rbp-%ld]\n", VAR_IND_(var)*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -311,10 +467,10 @@ static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const trans
     }
     else
     {
-        fprintf(out, "PUSH 0\n");
+        fprintf(out, "push 0\n");
     }
-
-    fprintf(out, "POP [%zu+R1]\n", var_ind);
+    // fprintf(out, "sub rsp, 8\n");
+    // fprintf(out, "pop qword [rbp+%zu]\n", var_ind*8);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -758,7 +914,9 @@ static enum TranslationError translate_MAIN(translator_t* const translator, cons
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
     translator->count_var_decl = 0;
 
-    fprintf(out, ":main\n");
+    fprintf(out, "main:\n");
+    fprintf(out, "push rbp\n");
+    fprintf(out, "mov rbp, rsp\n");
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
@@ -811,12 +969,10 @@ static enum TranslationError translate_RET(translator_t* const translator, const
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
-    fprintf(out, "POP R2\n");
-    fprintf(out, "POP R1\n");
-    fprintf(out, "PUSH R2\n");
-    fprintf(out, "PUSH R1\n");
-
-    fprintf(out, "RET\n");
+    fprintf(out, "pop rax\n");
+    fprintf(out, "mov rsp, rbp\n");
+    fprintf(out, "pop rbp\n");
+    fprintf(out, "ret\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
