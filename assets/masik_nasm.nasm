@@ -78,152 +78,177 @@ main:
 push rbp
 mov rbp, rsp
 ;;; COMMENT: num
-push qword 0
-;;; COMMENT: num
-push qword 5
-;;; COMMENT: num
-push qword 0
-;;; COMMENT: while
+push qword 3
 ;;; COMMENT: var
-push qword [rbp-24]
+push qword [rbp-8]
+call func_2_1
+add rsp, 8
+push rax
 ;;; COMMENT: var
 push qword [rbp-16]
-;;; COMMENT: less
+call func_4_1
+add rsp, 8
+push rax
+;;; COMMENT: var
+push qword [rbp-24]
+call func_2_1
+add rsp, 8
+push rax
+;;; COMMENT: ret
+pop rax
+mov rsp, rbp
+pop rbp
+ret
+
+func_2_1:
+push rbp
+mov rbp, rsp
+push qword [rsp+16]
+;;; COMMENT: if
+;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
-jge .NotLess0
+jne .NotEq0
  push 1
-jmp .EndLess0
-.NotLess0:
+jmp .EndEq0
+.NotEq0:
 push 0
-.EndLess0:
+.EndEq0:
 pop rbx
 test rbx, rbx
 je .label1
+;;; COMMENT: if->if
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: ret
+pop rax
+mov rsp, rbp
+pop rbp
+ret
 jmp .label2
-.label3:
+.label1:
+.label2:
 ;;; COMMENT: var
-push qword [rbp-24]
+push qword [rbp-8]
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: sub
+pop rbx
+pop rcx
+sub rcx, rbx
+push rcx
+call func_2_1
+add rsp, 8
+push rax
 ;;; COMMENT: var
-push qword [rbp-16]
-;;; COMMENT: less
+push qword [rbp-8]
+;;; COMMENT: mul
+pop rbx
+pop rcx
+imul rcx, rbx
+push rcx
+;;; COMMENT: ret
+pop rax
+mov rsp, rbp
+pop rbp
+ret
+
+func_4_1:
+push rbp
+mov rbp, rsp
+push qword [rsp+16]
+;;; COMMENT: if
+;;; COMMENT: var
+push qword [rbp-8]
+;;; COMMENT: num
+push qword 1
+;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
-jge .NotLess4
+jne .NotEq3
  push 1
-jmp .EndLess4
-.NotLess4:
+jmp .EndEq3
+.NotEq3:
 push 0
-.EndLess4:
+.EndEq3:
 pop rbx
 test rbx, rbx
-je .label5
-;;; COMMENT: while->body
-.label2:
+je .label4
+;;; COMMENT: if->if
 ;;; COMMENT: num
 push qword 1
-;;; COMMENT: num
-push qword 5
-;;; COMMENT: while
+;;; COMMENT: ret
+pop rax
+mov rsp, rbp
+pop rbp
+ret
+jmp .label5
+.label4:
+.label5:
+;;; COMMENT: if
 ;;; COMMENT: var
-push qword [rbp-40]
+push qword [rbp-8]
 ;;; COMMENT: num
-push qword 1
-;;; COMMENT: great
+push qword 0
+;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
-jle .NotGreat6
+jne .NotEq6
  push 1
-jmp .EndGreat6
-.NotGreat6:
+jmp .EndEq6
+.NotEq6:
 push 0
-.EndGreat6:
+.EndEq6:
 pop rbx
 test rbx, rbx
 je .label7
-jmp .label8
-.label9:
-;;; COMMENT: var
-push qword [rbp-40]
+;;; COMMENT: if->if
 ;;; COMMENT: num
-push qword 1
-;;; COMMENT: great
-pop rbx
-pop rcx
-cmp rcx, rbx
-jle .NotGreat10
- push 1
-jmp .EndGreat10
-.NotGreat10:
-push 0
-.EndGreat10:
-pop rbx
-test rbx, rbx
-je .label11
-;;; COMMENT: while->body
+push qword 0
+;;; COMMENT: ret
+pop rax
+mov rsp, rbp
+pop rbp
+ret
+jmp .label8
+.label7:
 .label8:
 ;;; COMMENT: var
-push qword [rbp-40]
-;;; COMMENT: mul assign
-pop rbx
-mov rcx, qword [rbp-32]
-imul rcx, rbx
-mov qword [rbp-32], rcx
+push qword [rbp-8]
 ;;; COMMENT: num
 push qword 1
-;;; COMMENT: sub assign
+;;; COMMENT: sub
 pop rbx
-mov rcx, qword [rbp-40]
+pop rcx
 sub rcx, rbx
-mov qword [rbp-40], rcx
-jmp .label9
-;;; COMMENT: while->else
-.label7:
-.label11:
-;;; COMMENT: var
-push qword [rbp-32]
-;;; COMMENT: sum assign
-pop rbx
-mov rcx, qword [rbp-8]
-add rcx, rbx
-mov qword [rbp-8], rcx
-;;; COMMENT: num
-push qword 1
-;;; COMMENT: sum assign
-pop rbx
-mov rcx, qword [rbp-24]
-add rcx, rbx
-mov qword [rbp-24], rcx
-jmp .label3
-;;; COMMENT: while->else
-.label1:
-.label5:
-;;; COMMENT: num
-push qword 2
-;;; COMMENT: pow assign
-pop rcx
-mov rbx, qword [rbp-8]
-mov rdx, 1
-test rcx, rcx
-je .ZeroPow12
-.HelpCycle12:
-  imul rdx, rbx
-loop .HelpCycle12
-.ZeroPow12:
-mov qword [rbp-8], rdx
-;;; COMMENT: num
-push qword 100
-;;; COMMENT: div assign
-xor rdx, rdx
-pop rcx
-mov rax, qword [rbp-8]
-idiv rcx
-mov qword [rbp-8], rax
+push rcx
+call func_4_1
+add rsp, 8
+push rax
 ;;; COMMENT: var
 push qword [rbp-8]
+;;; COMMENT: num
+push qword 2
+;;; COMMENT: sub
+pop rbx
+pop rcx
+sub rcx, rbx
+push rcx
+call func_4_1
+add rsp, 8
+push rax
+;;; COMMENT: sum
+pop rbx
+pop rcx
+add rcx, rbx
+push rcx
 ;;; COMMENT: ret
 pop rax
 mov rsp, rbp

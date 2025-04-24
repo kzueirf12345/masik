@@ -16,58 +16,58 @@
         }                                                                                           \
     } while(0)
 
-#define REG_CNT 16
+// #define REG_CNT 16
 
-enum Reg 
-{
-    REG_ZERO       = 0,
-    REG_RAX        = 1,
-    REG_RBX        = 2,
-    REG_RCX        = 3,
-    REG_RDX        = 4,
-    REG_RSI        = 5,
-    REG_RDI        = 6,
-    REG_R8         = 7,
-    REG_R9         = 8,
-    REG_R10        = 9,
-    REG_R11        = 10,
-    REG_R12        = 11,
-    REG_R13        = 12,
-    REG_R14        = 13,
-    REG_R15        = 14,
-    REG_STACK      = 15,
-};
-static_assert(REG_CNT == REG_STACK + 1, "");
+// enum Reg 
+// {
+//     REG_ZERO       = 0,
+//     REG_RAX        = 1,
+//     REG_RBX        = 2,
+//     REG_RCX        = 3,
+//     REG_RDX        = 4,
+//     REG_RSI        = 5,
+//     REG_RDI        = 6,
+//     REG_R8         = 7,
+//     REG_R9         = 8,
+//     REG_R10        = 9,
+//     REG_R11        = 10,
+//     REG_R12        = 11,
+//     REG_R13        = 12,
+//     REG_R14        = 13,
+//     REG_R15        = 14,
+//     REG_STACK      = 15,
+// };
+// static_assert(REG_CNT == REG_STACK + 1, "");
 
-static const char* reg_to_str(const enum Reg reg)
-{
-    switch (reg)
-    {
-    case REG_RAX:  return "rax";
-    case REG_RBX:  return "rbx";
-    case REG_RCX:  return "rcx";
-    case REG_RDX:  return "rdx";
-    case REG_RSI:  return "rsi";
-    case REG_RDI:  return "rdi";
-    case REG_R8:   return "r8";
-    case REG_R9:   return "r9";
-    case REG_R10:  return "r10";
-    case REG_R11:  return "r11";
-    case REG_R12:  return "r12";
-    case REG_R13:  return "r13";
-    case REG_R14:  return "r14";
-    case REG_R15:  return "r15";
+// static const char* reg_to_str(const enum Reg reg)
+// {
+//     switch (reg)
+//     {
+//     case REG_RAX:  return "rax";
+//     case REG_RBX:  return "rbx";
+//     case REG_RCX:  return "rcx";
+//     case REG_RDX:  return "rdx";
+//     case REG_RSI:  return "rsi";
+//     case REG_RDI:  return "rdi";
+//     case REG_R8:   return "r8";
+//     case REG_R9:   return "r9";
+//     case REG_R10:  return "r10";
+//     case REG_R11:  return "r11";
+//     case REG_R12:  return "r12";
+//     case REG_R13:  return "r13";
+//     case REG_R14:  return "r14";
+//     case REG_R15:  return "r15";
         
-    case REG_ZERO:
-    case REG_STACK:
-    default:
-        fprintf(stderr, "Invalid enum for reg_to_str\n");
-        return NULL;
-    }
+//     case REG_ZERO:
+//     case REG_STACK:
+//     default:
+//         fprintf(stderr, "Invalid enum for reg_to_str\n");
+//         return NULL;
+//     }
 
-    fprintf(stderr, "Invalid enum for reg_to_str\n");
-    return NULL;
-}
+//     fprintf(stderr, "Invalid enum for reg_to_str\n");
+//     return NULL;
+// }
 
 typedef struct Func
 {
@@ -80,7 +80,6 @@ typedef struct Translator
     stack_key_t vars;
     stack_key_t funcs;
     size_t label_num;
-    size_t count_var_decl;
     
 } translator_t;
  
@@ -91,7 +90,6 @@ static enum TranslationError translator_ctor_(translator_t* const translator)
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->funcs, sizeof(func_t), 10));
     translator->label_num = 0;
-    translator->count_var_decl = 0;
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -103,7 +101,6 @@ static void translator_dtor_(translator_t* const translator)
     stack_dtor(&translator->vars);
     stack_dtor(&translator->funcs);
     IF_DEBUG(translator->label_num = 0;)
-    IF_DEBUG(translator->count_var_decl = 0;)
 }
 
 
@@ -406,7 +403,7 @@ static enum TranslationError translate_POW(translator_t* const translator, const
     fprintf(out, "je .ZeroPow%zu\n", pow_label_num);
 
     fprintf(out, ".HelpCycle%zu:\n", pow_label_num);
-    fprintf(out, "  imul rbx, rdx\n");
+    fprintf(out, "imul rbx, rdx\n");
     fprintf(out, "loop .HelpCycle%zu\n", pow_label_num);
 
     fprintf(out, ".ZeroPow%zu:\n", pow_label_num);
@@ -669,7 +666,7 @@ static enum TranslationError translate_POW_ASSIGNMENT(translator_t* const transl
     fprintf(out, "je .ZeroPow%zu\n", pow_label_num);
 
     fprintf(out, ".HelpCycle%zu:\n", pow_label_num);
-    fprintf(out, "  imul rdx, rbx\n", VAR_IND_(var)*8);
+    fprintf(out, "imul rdx, rbx\n", VAR_IND_(var)*8);
     fprintf(out, "loop .HelpCycle%zu\n", pow_label_num);
 
     fprintf(out, ".ZeroPow%zu:\n", pow_label_num);
@@ -784,7 +781,7 @@ static enum TranslationError translate_EQ(translator_t* const translator, const 
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "jne .NotEq%zu\n", cond_label_num);
 
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndEq%zu\n", cond_label_num);
 
     fprintf(out, ".NotEq%zu:\n", cond_label_num);
@@ -813,7 +810,7 @@ static enum TranslationError translate_NEQ(translator_t* const translator, const
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "je .NotNeq%zu\n", cond_label_num);
     
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndNeq%zu\n", cond_label_num);
 
     fprintf(out, ".NotNeq%zu:\n", cond_label_num);
@@ -841,7 +838,7 @@ static enum TranslationError translate_LESS(translator_t* const translator, cons
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "jge .NotLess%zu\n", cond_label_num);
     
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndLess%zu\n", cond_label_num);
 
     fprintf(out, ".NotLess%zu:\n", cond_label_num);
@@ -869,7 +866,7 @@ static enum TranslationError translate_LESSEQ(translator_t* const translator, co
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "jg .NotLesseq%zu\n", cond_label_num);
     
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndLesseq%zu\n", cond_label_num);
 
     fprintf(out, ".NotLesseq%zu:\n", cond_label_num);
@@ -897,7 +894,7 @@ static enum TranslationError translate_GREAT(translator_t* const translator, con
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "jle .NotGreat%zu\n", cond_label_num);
     
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndGreat%zu\n", cond_label_num);
 
     fprintf(out, ".NotGreat%zu:\n", cond_label_num);
@@ -926,7 +923,7 @@ static enum TranslationError translate_GREATEQ(translator_t* const translator, c
     fprintf(out, "cmp rcx, rbx\n");
     fprintf(out, "jl .NotGreateq%zu\n", cond_label_num);
     
-    fprintf(out, " push 1\n");
+    fprintf(out, "push 1\n");
     fprintf(out, "jmp .EndGreateq%zu\n", cond_label_num);
 
     fprintf(out, ".NotGreateq%zu:\n", cond_label_num);
@@ -967,24 +964,23 @@ static enum TranslationError translate_FUNC(translator_t* const translator, cons
 
     stack_dtor(&translator->vars);
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
-    translator->count_var_decl = 0;
 
-    fprintf(out, ":func_%zu_%zu\n", func.num, func.count_args);
+    fprintf(out, "\nfunc_%zu_%zu:\n", func.num, func.count_args);
+    fprintf(out, "push rbp\n");
+    fprintf(out, "mov rbp, rsp\n");
 
     const tree_elem_t* arg = elem->lt->rt;
-    for (size_t count = 0; count < func.count_args - 1; ++count, arg = arg->lt)
+    for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
     {
         CHECK_UNDECLD_VAR_(arg->rt);
         STACK_ERROR_HANDLE_(stack_push(&translator->vars, &arg->rt->lexem.data.var));
-        ++translator->count_var_decl;
-        fprintf(out, "POP [%zu+R1]\n", stack_size(translator->vars) - 1);
+        fprintf(out, "push qword [rbp+%zu]\n", (func.count_args - count)*8);
     }
     if (func.count_args != 0)
     {
         CHECK_UNDECLD_VAR_(arg);
         STACK_ERROR_HANDLE_(stack_push(&translator->vars, &arg->lexem.data.var));
-        ++translator->count_var_decl;
-        fprintf(out, "POP [%zu+R1]\n", stack_size(translator->vars) - 1);
+        fprintf(out, "push qword [rsp+%zu]\n", 2*8);
     }
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
@@ -1007,18 +1003,12 @@ static enum TranslationError translate_FUNC_LBRAKET(translator_t* const translat
                          && ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
     }
 
-    fprintf(out, "PUSH R1\n");
-
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    fprintf(out, "PUSH R1\n");
-    fprintf(out, "PUSH %zu\n", translator->count_var_decl);
-    fprintf(out, "ADD\n");
-    fprintf(out, "POP R1\n");
-
-    fprintf(out, "CALL :func_%zu_%zu\n", func.num, func.count_args);
-
-    fprintf(out, "POP R1\n");
+    IF_DEBUG(fprintf(out, ";;; COMMENT: call func\n");)
+    fprintf(out, "call func_%zu_%zu\n", func.num, func.count_args);
+    fprintf(out, "add rsp, %zu\n", func.count_args*8);
+    fprintf(out, "push rax\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -1042,7 +1032,6 @@ static enum TranslationError translate_MAIN(translator_t* const translator, cons
 
     stack_dtor(&translator->vars);
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
-    translator->count_var_decl = 0;
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: main\n");)
     fprintf(out, "main:\n");
