@@ -81,16 +81,19 @@ mov rbp, rsp
 push qword 3
 ;;; COMMENT: var
 push qword [rbp-8]
+;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
 ;;; COMMENT: var
 push qword [rbp-16]
+;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax
 ;;; COMMENT: var
 push qword [rbp-24]
+;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
@@ -114,7 +117,7 @@ pop rbx
 pop rcx
 cmp rcx, rbx
 jne .NotEq0
- push 1
+push 1
 jmp .EndEq0
 .NotEq0:
 push 0
@@ -142,6 +145,7 @@ pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
+;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
@@ -172,7 +176,7 @@ pop rbx
 pop rcx
 cmp rcx, rbx
 jne .NotEq3
- push 1
+push 1
 jmp .EndEq3
 .NotEq3:
 push 0
@@ -201,7 +205,7 @@ pop rbx
 pop rcx
 cmp rcx, rbx
 jne .NotEq6
- push 1
+push 1
 jmp .EndEq6
 .NotEq6:
 push 0
@@ -229,6 +233,7 @@ pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
+;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax
@@ -241,6 +246,7 @@ pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
+;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax

@@ -83,6 +83,13 @@ enum LexerError lexing(lexer_t* const lexer, const char* const filename)
     size_t line = 1;
     for (size_t ind = 0; text[ind] != L'\0'; ++ind)
     {
+        if (text[ind] == L'\\')
+        {
+            ++ind;
+            for (; text[ind] != L'\\'; ++ind);
+            continue;
+        }
+
         if (iswspace((wint_t)text[ind]))
         {
             line += (text[ind] == L'\n');
