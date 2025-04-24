@@ -26,11 +26,11 @@ const char* flags_strerror(const enum FlagsError error);
 
 typedef struct FlagsObjs
 {
-    char log_folder [FILENAME_MAX];
+    char log_folder [FILENAME_MAX + 1];
 
-    char in_filename[FILENAME_MAX];
-    char splu_filename[FILENAME_MAX];
-    char nasm_filename[FILENAME_MAX];
+    char in_filename[FILENAME_MAX + 1];
+    char splu_filename[FILENAME_MAX + 1];
+    char nasm_filename[FILENAME_MAX + 1];
 
     FILE* splu_out;
     FILE* nasm_out;

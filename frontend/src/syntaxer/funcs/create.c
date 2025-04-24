@@ -90,7 +90,7 @@ enum TreeError syntaxer_ctor(tree_t* const syntaxer, const lexer_t lexer)
     syntaxer->size = size_;
                                                                      stack_dtor(&desc_state.errors);
 
-    TREE_VERIFY(syntaxer);
+    TREE_VERIFY_ASSERT(syntaxer);
     return TREE_ERROR_SUCCESS;
 }
 

@@ -73,31 +73,22 @@ mov rdi, rax
 mov rax, 60
 syscall
 
-;;; COMMENT: main
 main:
 push rbp
 mov rbp, rsp
-;;; COMMENT: num
 push qword 3
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
-;;; COMMENT: var
 push qword [rbp-16]
-;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax
-;;; COMMENT: var
 push qword [rbp-24]
-;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp
@@ -107,12 +98,8 @@ func_2_1:
 push rbp
 mov rbp, rsp
 push qword [rsp+16]
-;;; COMMENT: if
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
@@ -125,10 +112,7 @@ push 0
 pop rbx
 test rbx, rbx
 je .label1
-;;; COMMENT: if->if
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp
@@ -136,27 +120,20 @@ ret
 jmp .label2
 .label1:
 .label2:
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: sub
 pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
-;;; COMMENT: call func
 call func_2_1
 add rsp, 8
 push rax
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: mul
 pop rbx
 pop rcx
 imul rcx, rbx
 push rcx
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp
@@ -166,12 +143,8 @@ func_4_1:
 push rbp
 mov rbp, rsp
 push qword [rsp+16]
-;;; COMMENT: if
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
@@ -184,10 +157,7 @@ push 0
 pop rbx
 test rbx, rbx
 je .label4
-;;; COMMENT: if->if
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp
@@ -195,12 +165,8 @@ ret
 jmp .label5
 .label4:
 .label5:
-;;; COMMENT: if
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 0
-;;; COMMENT: eq
 pop rbx
 pop rcx
 cmp rcx, rbx
@@ -213,10 +179,7 @@ push 0
 pop rbx
 test rbx, rbx
 je .label7
-;;; COMMENT: if->if
-;;; COMMENT: num
 push qword 0
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp
@@ -224,38 +187,28 @@ ret
 jmp .label8
 .label7:
 .label8:
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 1
-;;; COMMENT: sub
 pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
-;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax
-;;; COMMENT: var
 push qword [rbp-8]
-;;; COMMENT: num
 push qword 2
-;;; COMMENT: sub
 pop rbx
 pop rcx
 sub rcx, rbx
 push rcx
-;;; COMMENT: call func
 call func_4_1
 add rsp, 8
 push rax
-;;; COMMENT: sum
 pop rbx
 pop rcx
 add rcx, rbx
 push rcx
-;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp

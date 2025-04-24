@@ -71,7 +71,7 @@ tree_elem_t* tree_ctor_recursive_(wchar_t** token, wchar_t** buffer);
 
 enum TreeError tree_ctor(tree_t* tree, const char* const filename)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
     lassert(!is_invalid_ptr(filename), "");
 
     wchar_t* text = NULL;
@@ -196,7 +196,7 @@ lexem_t tree_ctor_lexem_(wchar_t** token, wchar_t** buffer)
 
 void tree_dtor(tree_t* const tree)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
 
     tree_elem_dtor_recursive(&tree->Groot);
     tree->size = 0;
@@ -207,7 +207,7 @@ enum TreeError tree_print_lexem_(const lexem_t lexem, FILE* out);
 
 enum TreeError tree_print(const tree_t tree, FILE* out)
 {
-    TREE_VERIFY(&tree);
+    TREE_VERIFY_ASSERT(&tree);
     lassert(!is_invalid_ptr(out), "");
 
     TREE_ERROR_HANDLE(tree_print_recursive_(tree.Groot, out));

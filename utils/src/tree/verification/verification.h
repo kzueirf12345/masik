@@ -38,13 +38,14 @@ const char* tree_strerror(const enum TreeError error);
         }                                                                                           \
     } while(0)
 
+
+enum TreeError tree_verify(const tree_t* const tree);
+
 #ifndef NDEBUG
 
-enum TreeError tree_verify_NOT_USE(const tree_t* const tree);
-
-#define TREE_VERIFY(tree)                                                                   \
+#define TREE_VERIFY_ASSERT(tree)                                                                   \
         do {                                                                                        \
-            const enum TreeError error = tree_verify_NOT_USE(tree);                       \
+            const enum TreeError error = tree_verify(tree);                       \
             if (error)                                                                              \
             {                                                                                       \
                 tree_dumb(tree);                                                            \
@@ -55,7 +56,7 @@ enum TreeError tree_verify_NOT_USE(const tree_t* const tree);
 
 #else /*NDEBUG*/
 
-#define TREE_VERIFY(tree) do {} while(0)
+#define TREE_VERIFY_ASSERT(tree) do {} while(0)
 
 #endif /*NDEBUG*/
 

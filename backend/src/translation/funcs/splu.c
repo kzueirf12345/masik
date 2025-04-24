@@ -65,7 +65,7 @@ static enum TranslationError translate_recursive_(translator_t* const translator
 
 enum TranslationError translate_splu(const tree_t* const tree, FILE* out)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
     lassert(!is_invalid_ptr(out), "");
 
     translator_t translator = {};
@@ -260,6 +260,9 @@ static enum TranslationError translate_LBRAKET(translator_t* const translator, c
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -271,6 +274,9 @@ static enum TranslationError translate_RBRAKET(translator_t* const translator, c
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -339,6 +345,9 @@ static enum TranslationError translate_DECL_FLAG(translator_t* const translator,
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -383,6 +392,9 @@ static enum TranslationError translate_LBODY(translator_t* const translator, con
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -394,6 +406,9 @@ static enum TranslationError translate_RBODY(translator_t* const translator, con
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -405,6 +420,9 @@ static enum TranslationError translate_COND_LBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -416,6 +434,9 @@ static enum TranslationError translate_COND_RBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -671,6 +692,9 @@ static enum TranslationError translate_ELSE(translator_t* const translator, cons
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -757,6 +781,9 @@ static enum TranslationError translate_FUNC_RBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -801,6 +828,9 @@ static enum TranslationError translate_CALL_FUNC_LBRAKET(translator_t* const tra
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -812,6 +842,9 @@ static enum TranslationError translate_CALL_FUNC_RBRAKET(translator_t* const tra
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 

@@ -119,7 +119,7 @@ static enum TranslationError translate_recursive_(translator_t* const translator
 
 enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
     lassert(!is_invalid_ptr(out), "");
 
     translator_t translator = {};
@@ -248,9 +248,6 @@ enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
 
 #define VAR_IND_(var_)                                                                              \
         (var_ - (size_t*)stack_begin(translator->vars) + 1)
-
-// #define INC_FREE_REG                                                                                \
-//         translator->free_reg += (translator->free_reg != REG_STACK)
     
 #define USE_LABEL_                                                                                  \
         (translator->label_num++)
@@ -283,7 +280,7 @@ enum TranslationError translate_recursive_(translator_t* const translator, const
         CHECK_DECLD_VAR_(finded_var, elem);
 
         IF_DEBUG(fprintf(out, ";;; COMMENT: var\n");)
-        fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var)*8);
+        fprintf(out, "push qword [rbp-%ld]\n", VAR_IND_(finded_var) * (long)sizeof(num_t));
         break;
     }
 
@@ -417,6 +414,9 @@ static enum TranslationError translate_LBRAKET(translator_t* const translator, c
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -428,6 +428,9 @@ static enum TranslationError translate_RBRAKET(translator_t* const translator, c
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -460,7 +463,7 @@ static enum TranslationError translate_ASSIGNMENT(translator_t* const translator
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: assign\n");)
-    fprintf(out, "pop qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "pop qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -487,8 +490,8 @@ static enum TranslationError translate_DECL_ASSIGNMENT(translator_t* const trans
         IF_DEBUG(fprintf(out, ";;; COMMENT: decl assign 0\n");)
         fprintf(out, "push 0\n");
     }
-    // fprintf(out, "sub rsp, 8\n");
-    // fprintf(out, "pop qword [rbp+%zu]\n", var_ind*8);
+    // fprintf(out, "sub rsp, sizeof(num_t)\n");
+    // fprintf(out, "pop qword [rbp+%zu]\n", var_ind*sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -498,6 +501,9 @@ static enum TranslationError translate_DECL_FLAG(translator_t* const translator,
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -547,6 +553,9 @@ static enum TranslationError translate_LBODY(translator_t* const translator, con
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -558,6 +567,9 @@ static enum TranslationError translate_RBODY(translator_t* const translator, con
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -569,6 +581,9 @@ static enum TranslationError translate_COND_LBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -580,6 +595,9 @@ static enum TranslationError translate_COND_RBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -660,17 +678,17 @@ static enum TranslationError translate_POW_ASSIGNMENT(translator_t* const transl
     IF_DEBUG(fprintf(out, ";;; COMMENT: pow assign\n");)
 
     fprintf(out, "pop rcx\n");
-    fprintf(out, "mov rbx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rbx, qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
     fprintf(out, "mov rdx, 1\n");
     fprintf(out, "test rcx, rcx\n");
     fprintf(out, "je .ZeroPow%zu\n", pow_label_num);
 
     fprintf(out, ".HelpCycle%zu:\n", pow_label_num);
-    fprintf(out, "imul rdx, rbx\n", VAR_IND_(var)*8);
+    fprintf(out, "imul rdx, rbx\n");
     fprintf(out, "loop .HelpCycle%zu\n", pow_label_num);
 
     fprintf(out, ".ZeroPow%zu:\n", pow_label_num);
-    fprintf(out, "mov qword [rbp-%ld], rdx\n", VAR_IND_(var)*8);
+    fprintf(out, "mov qword [rbp-%ld], rdx\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -690,9 +708,9 @@ static enum TranslationError translate_SUM_ASSIGNMENT(translator_t* const transl
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: sum assign\n");)
     fprintf(out, "pop rbx\n");
-    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
     fprintf(out, "add rcx, rbx\n");
-    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -712,9 +730,9 @@ static enum TranslationError translate_SUB_ASSIGNMENT(translator_t* const transl
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: sub assign\n");)
     fprintf(out, "pop rbx\n");
-    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
     fprintf(out, "sub rcx, rbx\n");
-    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -734,9 +752,9 @@ static enum TranslationError translate_MUL_ASSIGNMENT(translator_t* const transl
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: mul assign\n");)
     fprintf(out, "pop rbx\n");
-    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rcx, qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
     fprintf(out, "imul rcx, rbx\n");
-    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var)*8);
+    fprintf(out, "mov qword [rbp-%ld], rcx\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -757,9 +775,9 @@ static enum TranslationError translate_DIV_ASSIGNMENT(translator_t* const transl
     IF_DEBUG(fprintf(out, ";;; COMMENT: div assign\n");)
     fprintf(out, "xor rdx, rdx\n");
     fprintf(out, "pop rcx\n");
-    fprintf(out, "mov rax, qword [rbp-%ld]\n", VAR_IND_(var)*8);
+    fprintf(out, "mov rax, qword [rbp-%ld]\n", VAR_IND_(var) * (long)sizeof(num_t));
     fprintf(out, "idiv rcx\n");
-    fprintf(out, "mov qword [rbp-%ld], rax\n", VAR_IND_(var)*8);
+    fprintf(out, "mov qword [rbp-%ld], rax\n", VAR_IND_(var) * (long)sizeof(num_t));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -939,6 +957,9 @@ static enum TranslationError translate_ELSE(translator_t* const translator, cons
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -974,13 +995,13 @@ static enum TranslationError translate_FUNC(translator_t* const translator, cons
     {
         CHECK_UNDECLD_VAR_(arg->rt);
         STACK_ERROR_HANDLE_(stack_push(&translator->vars, &arg->rt->lexem.data.var));
-        fprintf(out, "push qword [rbp+%zu]\n", (func.count_args - count)*8);
+        fprintf(out, "push qword [rbp+%ld]\n", (long)(func.count_args - count) * (long)sizeof(num_t));
     }
     if (func.count_args != 0)
     {
         CHECK_UNDECLD_VAR_(arg);
         STACK_ERROR_HANDLE_(stack_push(&translator->vars, &arg->lexem.data.var));
-        fprintf(out, "push qword [rsp+%zu]\n", 2*8);
+        fprintf(out, "push qword [rsp+%ld]\n", 2l * (long)sizeof(num_t));
     }
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
@@ -1007,7 +1028,7 @@ static enum TranslationError translate_FUNC_LBRAKET(translator_t* const translat
 
     IF_DEBUG(fprintf(out, ";;; COMMENT: call func\n");)
     fprintf(out, "call func_%zu_%zu\n", func.num, func.count_args);
-    fprintf(out, "add rsp, %zu\n", func.count_args*8);
+    fprintf(out, "add rsp, %ld\n", (long)func.count_args * (long)sizeof(num_t));
     fprintf(out, "push rax\n");
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -1018,6 +1039,9 @@ static enum TranslationError translate_FUNC_RBRAKET(translator_t* const translat
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -1064,6 +1088,9 @@ static enum TranslationError translate_CALL_FUNC_LBRAKET(translator_t* const tra
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 
@@ -1075,6 +1102,9 @@ static enum TranslationError translate_CALL_FUNC_RBRAKET(translator_t* const tra
     lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
+    (void)translator;
+    (void)elem;
+    (void)out;
 
     fprintf(stderr, "Invalid op type: %s\n", __func__);
 

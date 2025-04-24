@@ -33,7 +33,7 @@ const char* tree_strerror(const enum TreeError error)
 
 enum TreeError tree_verify_recursive_(const tree_elem_t* const elem, size_t* const size);
 
-enum TreeError tree_verify_NOT_USE(const tree_t* const syntaxer)
+enum TreeError tree_verify(const tree_t* const syntaxer)
 {
     switch (is_invalid_ptr(syntaxer))
     {

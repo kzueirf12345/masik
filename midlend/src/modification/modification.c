@@ -25,7 +25,7 @@ enum TreeError tree_simplify_(tree_t* const tree);
 
 enum TreeError tree_modify(tree_t* const tree, const enum Mode mode)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
 
     switch (mode)
     {
@@ -50,7 +50,7 @@ enum TreeError tree_modify(tree_t* const tree, const enum Mode mode)
         break;
     }
 
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
     return TREE_ERROR_SUCCESS;
 }
 
@@ -59,7 +59,7 @@ enum TreeError tree_simplify_trivial_  (tree_elem_t** elem, size_t* const count_
 
 enum TreeError tree_simplify_(tree_t* const tree)
 {
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
 
     size_t count_changes = 0;
     do
@@ -71,7 +71,7 @@ enum TreeError tree_simplify_(tree_t* const tree)
 
     tree_update_size(tree);
 
-    TREE_VERIFY(tree);
+    TREE_VERIFY_ASSERT(tree);
     return TREE_ERROR_SUCCESS;
 }
 
