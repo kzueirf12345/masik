@@ -73,142 +73,43 @@ mov rdi, rax
 mov rax, 60
 syscall
 
+;;; COMMENT: main
 main:
 push rbp
 mov rbp, rsp
-push qword 3
+;;; COMMENT: num
+push qword 10
+;;; COMMENT: num
+push qword 20
+;;; COMMENT: num
+push qword 11
+;;; COMMENT: if
+;;; COMMENT: var
 push qword [rbp-8]
-call func_2_1
-add rsp, 8
-push rax
+;;; COMMENT: var
 push qword [rbp-16]
-call func_4_1
-add rsp, 8
-push rax
-push qword [rbp-24]
-call func_2_1
-add rsp, 8
-push rax
-pop rax
-mov rsp, rbp
-pop rbp
-ret
-
-func_2_1:
-push rbp
-mov rbp, rsp
-push qword [rsp+16]
-push qword [rbp-8]
-push qword 1
+;;; COMMENT: great
 pop rbx
 pop rcx
 cmp rcx, rbx
-jne .NotEq0
+jle .NotGreat0
 push 1
-jmp .EndEq0
-.NotEq0:
+jmp .EndGreat0
+.NotGreat0:
 push 0
-.EndEq0:
+.EndGreat0:
 pop rbx
 test rbx, rbx
 je .label1
+;;; COMMENT: if->if
+;;; COMMENT: num
 push qword 1
-pop rax
-mov rsp, rbp
-pop rbp
-ret
 jmp .label2
 .label1:
 .label2:
-push qword [rbp-8]
-push qword 1
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-call func_2_1
-add rsp, 8
-push rax
-push qword [rbp-8]
-pop rbx
-pop rcx
-imul rcx, rbx
-push rcx
-pop rax
-mov rsp, rbp
-pop rbp
-ret
-
-func_4_1:
-push rbp
-mov rbp, rsp
-push qword [rsp+16]
-push qword [rbp-8]
-push qword 1
-pop rbx
-pop rcx
-cmp rcx, rbx
-jne .NotEq3
-push 1
-jmp .EndEq3
-.NotEq3:
-push 0
-.EndEq3:
-pop rbx
-test rbx, rbx
-je .label4
-push qword 1
-pop rax
-mov rsp, rbp
-pop rbp
-ret
-jmp .label5
-.label4:
-.label5:
-push qword [rbp-8]
-push qword 0
-pop rbx
-pop rcx
-cmp rcx, rbx
-jne .NotEq6
-push 1
-jmp .EndEq6
-.NotEq6:
-push 0
-.EndEq6:
-pop rbx
-test rbx, rbx
-je .label7
-push qword 0
-pop rax
-mov rsp, rbp
-pop rbp
-ret
-jmp .label8
-.label7:
-.label8:
-push qword [rbp-8]
-push qword 1
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-call func_4_1
-add rsp, 8
-push rax
-push qword [rbp-8]
-push qword 2
-pop rbx
-pop rcx
-sub rcx, rbx
-push rcx
-call func_4_1
-add rsp, 8
-push rax
-pop rbx
-pop rcx
-add rcx, rbx
-push rcx
+;;; COMMENT: var
+push qword [rbp-32]
+;;; COMMENT: ret
 pop rax
 mov rsp, rbp
 pop rbp

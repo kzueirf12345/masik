@@ -1,0 +1,20 @@
+call funcs
+comp jmp
+assign
+// name,             surname,    assign_val,  label,    operation, operand1,  operand2
+   CALL_FUNC,        CALL_PENIS, TRUE,        TRUE,     FALSE,     TRUE,      FALSE
+   IMPLEMENT_FUNC,   PENIS,      FALSE,       TRUE,     FALSE,     TRUE,      FALSE
+   CMP_JMP,          ENTER,      FALSE,       TRUE,     TRUE,      TRUE,      FALSE
+   ASSIGN,           GIPSY,      TRUE,        FALSE,    TRUE,      TRUE,      TRUE / FALSE
+   RET,              KILL_PENIS  FALSE,       FALSE,    FALSE,     TRUE,      FALSE
+   LABEL,            FIFT,       FALSE,       TRUE,     FALSE,     FALSE,     FALSE
+
+
+
+   FIFT(label0)
+   PENIS(88_tmp0, func_0_0)
+   hlt(88_tmp0)
+
+   MAIN
+ASSIGN(88_tmp0, ADD, b, c)
+ASSIGN(a, ADD, 88_tmp0, d)

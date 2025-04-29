@@ -127,43 +127,42 @@ enum TranslationError translate_nasm(const tree_t* const tree, FILE* out)
     fprintf(out, "section .data\n");
     fprintf(out, "HexTable db \"0123456789ABCDEF\"\n\n");
     fprintf(out, "section .text\n");
-    fprintf(out, "global _start\n\n");
-
-    fprintf(out, ";;; ---------------------------------------------\n");
-    fprintf(out, ";;; Descript:   print num\n");
-    fprintf(out, ";;; Entry:      rax  = num\n");
-    fprintf(out, ";;;             r11 = base\n");
-    fprintf(out, ";;; Exit:       rax = exit code\n");
-    fprintf(out, ";;; Destroy:    rcx, rdx, rsi, rdi, r11\n");
-    fprintf(out, ";;; ---------------------------------------------\n");
-    fprintf(out, "PrintNum:\n");
-    fprintf(out, "    mov rdi, rax                            ; rdi - num\n");
-    fprintf(out, "\n");
-    fprintf(out, "    xor rcx, rcx                            ; rcx - string size\n");
-    fprintf(out, "\n");
-    fprintf(out, ";;; check to zero and negative\n");
-    fprintf(out, "    test rax, rax\n");
-    fprintf(out, "js .Negative\n");
-    fprintf(out, "jne .Convertion\n");
-    fprintf(out, ";;; push '0' in stack\n");
-    fprintf(out, "    dec rsp\n");
-    fprintf(out, "    mov byte [rsp], '0'\n");
-    fprintf(out, "    inc rcx                                 ; ++size\n");
-    fprintf(out, "jmp .Print\n");
-    fprintf(out, "\n");
-    fprintf(out, ".Negative:\n");
-    fprintf(out, "    neg rax                                 ; num = -num\n");
-    fprintf(out, "\n");
-    fprintf(out, ".Convertion:\n");
-    fprintf(out, "    xor rdx, rdx                            ; rdx = 0 (in particular edx)\n");
-    fprintf(out, "    div r11                                 ; [rax, rdx] = rdx:rax / r11\n");
-    fprintf(out, "    mov dl, byte [HexTable + rdx]           ; dl = HexTable[dl]\n");
-    fprintf(out, ";;; push dl (digit) in stack\n");
-    fprintf(out, "    dec rsp\n");
-    fprintf(out, "    mov byte [rsp], dl\n");
-    fprintf(out, "\n");
-    fprintf(out, "    inc rcx                                 ; ++size\n");
-    fprintf(out, "    test rax, rax\n");
+    fprintf(out, "global _start\n\n"
+                 ";;; ---------------------------------------------\n"
+                 ";;; Descript:   print num\n"
+                 ";;; Entry:      rax  = num\n"
+                 ";;;             r11 = base\n"
+                 ";;; Exit:       rax = exit code\n"
+                 ";;; Destroy:    rcx, rdx, rsi, rdi, r11\n"
+                 ";;; ---------------------------------------------\n"
+                 "PrintNum:\n"
+                 "    mov rdi, rax                            ; rdi - num\n"
+                 "\n"
+                 "    xor rcx, rcx                            ; rcx - string size\n"
+                 "\n"
+                 ";;; check to zero and negative\n"
+                 "    test rax, rax\n"
+                 "js .Negative\n"
+                 "jne .Convertion\n"
+                 ";;; push '0' in stack\n"
+                 "    dec rsp\n"
+                 "    mov byte [rsp], '0'\n"
+                 "    inc rcx                                 ; ++size\n"
+                 "jmp .Print\n"
+                 "\n"
+                 ".Negative:\n"
+                 "    neg rax                                 ; num = -num\n"
+                 "\n"
+                 ".Convertion:\n"
+                 "    xor rdx, rdx                            ; rdx = 0 (in particular edx)\n"
+                 "    div r11                                 ; [rax, rdx] = rdx:rax / r11\n"
+                 "    mov dl, byte [HexTable + rdx]           ; dl = HexTable[dl]\n"
+                 ";;; push dl (digit) in stack\n"
+                 "    dec rsp\n"
+                 "    mov byte [rsp], dl\n"
+                 "\n"
+                 "    inc rcx                                 ; ++size\n"
+                 "    test rax, rax\n");
     fprintf(out, "jne .Convertion\n");
     fprintf(out, "\n");
     fprintf(out, ";;; check to negative (add '-')\n");
@@ -520,7 +519,7 @@ static enum TranslationError translate_IF(translator_t* const translator, const 
 
     TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
-    size_t label_else = USE_LABEL_;
+    size_t label_else = USE_LABEL_; // FIXME macro()
 
     fprintf(out, "pop rbx\n");
     fprintf(out, "test rbx, rbx\n");
@@ -978,12 +977,12 @@ static enum TranslationError translate_FUNC(translator_t* const translator, cons
     {
         func.count_args += (ptr->lexem.type    == LEXEM_TYPE_OP 
                          && ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
-    }
+    } // FIXME func
 
     CHECK_UNDECLD_FUNC_(func);
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
 
-    stack_dtor(&translator->vars);
+    stack_dtor(&translator->vars); // FIXME
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(size_t), 10));
 
     fprintf(out, "\nfunc_%zu_%zu:\n", func.num, func.count_args);
