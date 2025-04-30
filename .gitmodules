@@ -7,3 +7,6 @@
 [submodule "libs/SPlU"]
 	path = libs/SPlU
 	url = https://github.com/kzueirf12345/SPlU.git
+[submodule "libs/hash_table"]
+	path = libs/hash_table
+	url = https://github.com/kzueirf12345/hash_table.git
