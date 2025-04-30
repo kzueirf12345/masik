@@ -13,6 +13,7 @@ const char* ir_translation_strerror(const enum IrTranslationError error)
         CASE_ENUM_TO_STRING_(IR_TRANSLATION_ERROR_INVALID_OP_TYPE);
         CASE_ENUM_TO_STRING_(IR_TRANSLATION_ERROR_INVALID_LEXEM_TYPE);
         CASE_ENUM_TO_STRING_(IR_TRANSLATION_ERROR_REDECL_VAR);
+        CASE_ENUM_TO_STRING_(IR_TRANSLATION_ERROR_SMASH_MAP);
         default:
             return "UNKNOWN_IR_TRANSLATION_ERROR";
     }

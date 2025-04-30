@@ -3,6 +3,7 @@
 #include "utils/utils.h"
 #include "stack_on_array/libstack.h"
 #include "translation/funcs/funcs.h"
+#include "hash_table/libhash_table.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -13,6 +14,18 @@
                             stack_strerror(stack_error_handler));                                   \
             __VA_ARGS__                                                                             \
             return IR_TRANSLATION_ERROR_STACK;                                                      \
+        }                                                                                           \
+    } while(0)
+
+#define SMASH_MAP_ERROR_HANDLE_(call_func, ...)                                                     \
+    do {                                                                                            \
+        const enum SmashMapError error_handler = call_func;                                         \
+        if (error_handler)                                                                          \
+        {                                                                                           \
+            fprintf(stderr, "Can't " #call_func". SmashMap error: %s\n",                            \
+                            smash_map_strerror(error_handler));                                     \
+            __VA_ARGS__                                                                             \
+            return IR_TRANSLATION_ERROR_SMASH_MAP;                                                  \
         }                                                                                           \
     } while(0)
 
@@ -29,16 +42,124 @@ typedef struct Translator
     size_t label_num;
     size_t temp_var_num;
     long var_num_base;
+    size_t arg_var_num;
+
+    smash_map_t func_arg_num;
 } translator_t;
+
+#define HASH_KEY_ 31
+static size_t func_hash_func_(const void* const string)
+{
+    lassert(!is_invalid_ptr(string), "");
+
+    size_t hash_result = 0;
  
+    for (const char* it = (const char*)string; *it; ++it)
+    {
+        hash_result = (size_t)(((HASH_KEY_ * hash_result) % INT64_MAX + (size_t)*it) % INT64_MAX);
+    }
+ 
+    return hash_result;
+}
+#undef HASH_KEY_
+
+static int map_key_to_str_ (const void* const elem, const size_t   elem_size,
+                            char* const *     str,  const size_t mx_str_size)
+{
+    if (is_invalid_ptr(str))  return -1;
+    if (is_invalid_ptr(*str)) return -1;
+    (void)elem_size;
+
+    if (elem && *(const char*)elem)
+    {
+        if (snprintf(*str, mx_str_size, "'%zu, %zu'", 
+                                        ((const func_t*)elem)->num, 
+                                        ((const func_t*)elem)->count_args) 
+            <= 0)
+        {
+            perror("Can't snprintf key to str");
+            return -1;
+        }
+    }
+    else
+    {
+        if (snprintf(*str, mx_str_size, "(nul)") < 0)
+        {
+            perror("Can't snprintf key (nul) to str");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int map_val_to_str_ (const void* const elem, const size_t   elem_size,
+                            char* const *     str,  const size_t mx_str_size)
+{
+    if (is_invalid_ptr(str))  return -1;
+    if (is_invalid_ptr(*str)) return -1;
+    (void)elem_size;
+
+    if (elem)
+    {
+        if (snprintf(*str, mx_str_size, "'%zu'", *(const size_t*)elem) <= 0)
+        {
+            perror("Can't snprintf val to str");
+            return -1;
+        }
+    
+    }
+    else
+    {
+        if (snprintf(*str, mx_str_size, "(nul)") < 0)
+        {
+            perror("Can't snprintf key (nul) to str");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+#define SMASH_MAP_SIZE_ 101
 static enum IrTranslationError translator_ctor_(translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
+
+    SMASH_MAP_ERROR_HANDLE_(
+        SMASH_MAP_CTOR(
+            &translator->func_arg_num, 
+            SMASH_MAP_SIZE_, 
+            sizeof(func_t), 
+            sizeof(size_t), 
+            func_hash_func_,
+            map_key_to_str_,
+            map_val_to_str_
+        )
+    );
 
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->vars, sizeof(stack_key_t), 1));
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->funcs, sizeof(func_t), 10));
     translator->label_num = 0;
     translator->temp_var_num = 0;
+    translator->var_num_base = 0;
+    translator->arg_var_num = 0;
+
+    return IR_TRANSLATION_ERROR_SUCCESS;
+}
+#undef SMASH_MAP_SIZE_
+
+static enum IrTranslationError clean_vars_stacks_(translator_t* const translator)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    while (!stack_is_empty(translator->vars))
+    {
+        stack_key_t poped_stack = 0;
+        STACK_ERROR_HANDLE_(stack_pop(&translator->vars, &poped_stack));
+        stack_dtor(&poped_stack);
+    }
     translator->var_num_base = 0;
 
     return IR_TRANSLATION_ERROR_SUCCESS;
@@ -48,18 +169,16 @@ static void translator_dtor_(translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    while (!stack_is_empty(translator->vars))
-    {
-        stack_key_t poped_stack = 0;
-        stack_pop(&translator->vars, &poped_stack);
-        stack_dtor(&poped_stack);
-    }
+    smash_map_dtor(&translator->func_arg_num);
+
+    clean_vars_stacks_(translator);
 
     stack_dtor(&translator->vars);
     stack_dtor(&translator->funcs);
     IF_DEBUG(translator->label_num = 0;)
     IF_DEBUG(translator->temp_var_num = 0;)
     IF_DEBUG(translator->var_num_base = 0;)
+    IF_DEBUG(translator->arg_var_num = 0;)
 }
 
 #define IR_NUM_(assign_num_, num_)                                                                  \
@@ -78,6 +197,24 @@ static void translator_dtor_(translator_t* const translator)
             assign_num_,                                                                            \
             OP_TYPE_DECL_ASSIGNMENT,                                                                \
             var_num_                                                                                \
+        )
+
+#define IR_GIVE_ARG_(arg_num_, operand1_)                                                           \
+        fprintf(                                                                                    \
+            out,                                                                                    \
+            "GIPSY(14_arg%zu, %d, 88_tmp%zu)\t# give arg\n",                                        \
+            arg_num_,                                                                               \
+            OP_TYPE_ARGS_COMMA,                                                                     \
+            operand1_                                                                               \
+        )
+
+#define IR_TAKE_ARG_(assign_num_, arg_num_)                                                         \
+        fprintf(                                                                                    \
+            out,                                                                                    \
+            "GIPSY(var%ld, %d, 14_arg%zu)\t# take arg\n",                                           \
+            assign_num_,                                                                            \
+            OP_TYPE_ARGS_COMMA,                                                                     \
+            arg_num_                                                                                \
         )
         
 #define IR_ASSIGN_(assign_num_, op_type_, operand1_, operand2_)                                     \
@@ -919,10 +1056,13 @@ static enum IrTranslationError translate_ELSE(translator_t* const translator, co
     return IR_TRANSLATION_ERROR_INVALID_OP_TYPE;
 }
 
-static enum IrTranslationError init_func_(func_t* const func, const tree_elem_t* tree_ptr)
+static enum IrTranslationError init_func_(translator_t* const translator, const tree_elem_t* tree_ptr,
+                                          func_t* const func, size_t* const start_arg_num)
 {
     lassert(!is_invalid_ptr(func), "");
     lassert(!is_invalid_ptr(tree_ptr), "");
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(start_arg_num), "");
 
     func->num        = tree_ptr->lt->lexem.data.var;
     func->count_args = (tree_ptr->rt != NULL);
@@ -933,12 +1073,27 @@ static enum IrTranslationError init_func_(func_t* const func, const tree_elem_t*
                           && tree_ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
     }
 
+    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, func);
+
+    if (!start_arg_num_ptr)
+    {
+        SMASH_MAP_ERROR_HANDLE_(
+            smash_map_insert(
+                &translator->func_arg_num, 
+                (smash_map_elem_t){.key = func, .val = &translator->arg_var_num}
+            )
+        );
+        *start_arg_num = translator->arg_var_num;
+        translator->arg_var_num += func->count_args;
+    }
+    else
+    {
+        *start_arg_num = *start_arg_num_ptr;
+    }
+
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
 
-//FIXME - 
-//FIXME -
-//FIXME - 
 static enum IrTranslationError translate_FUNC(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
@@ -946,26 +1101,28 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     lassert(!is_invalid_ptr(out), "");
 
     func_t func = {};
-    IR_TRANSLATION_ERROR_HANDLE(init_func_(&func, elem->lt));
+    size_t start_arg_num = 0;
+    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem->lt, &func, &start_arg_num));
 
     CHECK_UNDECLD_FUNC_(func);
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
 
     IR_IMPLEMENT_FUNC_(func.num, func.count_args);
 
+    STACK_DUMB(translator->vars, NULL);
+
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
     const tree_elem_t* arg = elem->lt->rt;
-    for (size_t count = 0; count <= func.count_args; ++count, arg = arg->lt)
+    for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
     {
-        fprintf(stderr, RED_TEXT("kek lol\n"));
         CHECK_UNDECLD_VAR_(arg->rt);
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->rt->lexem.data.var));
 
         const long first_op = translator->var_num_base + (long)(CUR_VAR_STACK_SIZE_ - 1);
-        const size_t second_op = translator->temp_var_num - func.count_args + count;
+        const size_t second_op = start_arg_num + func.count_args - count;
 
-        IR_ASSIGN_VAR_(first_op, OP_TYPE_DECL_ASSIGNMENT, second_op);
+        IR_TAKE_ARG_(first_op, second_op);
     }
     if (func.count_args != 0)
     {
@@ -973,14 +1130,14 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
 
         const long first_op = translator->var_num_base + (long)(CUR_VAR_STACK_SIZE_ - 1);
-        const size_t second_op = translator->temp_var_num - 1;
+        const size_t second_op = start_arg_num;
         
-        IR_ASSIGN_VAR_(first_op, OP_TYPE_DECL_ASSIGNMENT, second_op);
+        IR_TAKE_ARG_(first_op, second_op);
     }
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    IR_TRANSLATION_ERROR_HANDLE(delete_top_var_frame_(translator));
+    IR_TRANSLATION_ERROR_HANDLE(clean_vars_stacks_(translator));
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -992,9 +1149,28 @@ static enum IrTranslationError translate_FUNC_LBRAKET(translator_t* const transl
     lassert(!is_invalid_ptr(out), "");
 
     func_t func = {};
-    IR_TRANSLATION_ERROR_HANDLE(init_func_(&func, elem));
+    size_t start_arg_num = 0;
+    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem, &func, &start_arg_num));
 
-    IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
+    const tree_elem_t* arg = elem->rt;
+    for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
+    {
+        const size_t first_op = start_arg_num + func.count_args - count;
+
+        IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg->rt, out));
+        const size_t second_op = translator->temp_var_num - 1;
+
+        IR_GIVE_ARG_(first_op, second_op);
+    }
+    if (func.count_args != 0)
+    {
+        const size_t first_op = start_arg_num;
+
+        IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
+        const size_t second_op = translator->temp_var_num - 1;
+
+        IR_GIVE_ARG_(first_op, second_op);
+    }
 
     IR_CALL_FUNC_(translator->temp_var_num++, func.num, func.count_args);
 
@@ -1026,9 +1202,10 @@ static enum IrTranslationError translate_MAIN(translator_t* const translator, co
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
+    IR_TRANSLATION_ERROR_HANDLE(clean_vars_stacks_(translator));
+
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
-    IR_TRANSLATION_ERROR_HANDLE(delete_top_var_frame_(translator));
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -1039,8 +1216,10 @@ static enum IrTranslationError translate_ARGS_COMMA(translator_t* const translat
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
-    IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
-    IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
+    // IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
+    // IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
+
+    fprintf(stderr, "Invalid op type: %s\n", __func__);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }

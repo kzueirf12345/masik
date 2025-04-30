@@ -12,6 +12,7 @@ enum IrTranslationError
     IR_TRANSLATION_ERROR_INVALID_OP_TYPE       = 4,
     IR_TRANSLATION_ERROR_INVALID_LEXEM_TYPE    = 5,
     IR_TRANSLATION_ERROR_REDECL_VAR            = 6,
+    IR_TRANSLATION_ERROR_SMASH_MAP             = 7,
 };
 static_assert(IR_TRANSLATION_ERROR_SUCCESS == 0, "");
 

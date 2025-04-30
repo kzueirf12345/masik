@@ -42,7 +42,7 @@ endif
 
 FLAGS += $(ADD_FLAGS)
 
-LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils
+LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils -L../libs/hash_table -lhash_table
 
 
 DIRS = flags translation translation/verification translation/funcs

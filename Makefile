@@ -161,21 +161,24 @@ libs_rebuild: libs_clean libs_build
 libs_build:
 	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array/ && \
 	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger/ && \
-	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./utils/
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./utils/ && \
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/hash_table
 
 libs_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/stack_on_array/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger/ && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/ && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/hash_table
 
 
 clean: libs_clean frontend_clean midlend_clean backend_clean splu_clean
 
 clean_all:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/logger         && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./utils/ && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./frontend/          && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./midlend/          && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/SPlU          && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./backend/  
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/logger         	&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array 	&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/hash_table		&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/SPlU          	&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./utils/ 				&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./frontend/          	&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./midlend/          		&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./backend/
