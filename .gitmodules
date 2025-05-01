@@ -10,3 +10,6 @@
 [submodule "libs/hash_table"]
 	path = libs/hash_table
 	url = https://github.com/kzueirf12345/hash_table.git
+[submodule "libs/PYAM_IR"]
+	path = libs/PYAM_IR
+	url = https://github.com/kzueirf12345/PYAM_IR
