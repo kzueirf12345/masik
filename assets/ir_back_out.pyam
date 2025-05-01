@@ -1,54 +1,64 @@
 CALL_PENIS(88_tmp0, main, 0)	# call main
 
 PENIS(main, 0)	# implement main
-GIPSY(88_tmp1, 8, 15)	# num
-GIPSY(14_arg2, 33, 88_tmp1)	# give arg
-GIPSY(88_tmp2, 8, 10)	# num
-GIPSY(14_arg1, 33, 88_tmp2)	# give arg
-GIPSY(88_tmp3, 8, 5)	# num
-GIPSY(14_arg0, 33, 88_tmp3)	# give arg
-CALL_PENIS(88_tmp4, func_0_3, 3)	# call func
-GIPSY(var0, 9, 88_tmp4)	# DECL_ASSIGNMENT
-GIPSY(88_tmp5, 8, 5)	# num
-GIPSY(14_arg5, 33, 88_tmp5)	# give arg
-GIPSY(88_tmp6, 8, 3)	# num
-GIPSY(14_arg4, 33, 88_tmp6)	# give arg
-GIPSY(88_tmp7, 8, 7)	# num
-GIPSY(14_arg3, 33, 88_tmp7)	# give arg
-CALL_PENIS(88_tmp8, func_4_3, 3)	# call func
-GIPSY(var1, 9, 88_tmp8)	# DECL_ASSIGNMENT
-GIPSY(88_tmp9, 9, var0)	# var
-GIPSY(88_tmp10, 9, var1)	# var
-GIPSY(88_tmp11, 0, 88_tmp9, 88_tmp10)	# SUM
+GIPSY(88_tmp1, 3)	# num
+GIPSY(32_var0, 12, 88_tmp1)	# IR_OP_TYPE_DECL_ASSIGNMENT
+GIPSY(88_tmp2, 32_var0)	# var
+GIPSY(14_arg0, 88_tmp2)	# give arg
+CALL_PENIS(88_tmp3, func_2_1, 1)	# call func
+GIPSY(32_var1, 12, 88_tmp3)	# IR_OP_TYPE_DECL_ASSIGNMENT
+GIPSY(88_tmp4, 32_var1)	# var
+GIPSY(14_arg1, 88_tmp4)	# give arg
+CALL_PENIS(88_tmp5, func_4_1, 1)	# call func
+GIPSY(32_var2, 12, 88_tmp5)	# IR_OP_TYPE_DECL_ASSIGNMENT
+GIPSY(88_tmp6, 32_var2)	# var
+GIPSY(14_arg0, 88_tmp6)	# give arg
+CALL_PENIS(88_tmp7, func_2_1, 1)	# call func
+KILL_PENIS(88_tmp7)	# ret
+
+PENIS(func_2_1, 1)	# implement func
+GIPSY(32_var0, 14_arg0)	# take arg
+GIPSY(88_tmp8, 32_var0)	# var
+GIPSY(88_tmp9, 1)	# num
+GIPSY(88_tmp10, 6, 88_tmp8, 88_tmp9)	# IR_OP_TYPE_EQ
+ENTER(label0, 88_tmp10)	# cond jmp
+GIPSY(88_tmp11, 1)	# num
 KILL_PENIS(88_tmp11)	# ret
-
-PENIS(func_0_3, 3)	# implement func
-GIPSY(var0, 33, 14_arg2)	# take arg
-GIPSY(var1, 33, 14_arg1)	# take arg
-GIPSY(var2, 33, 14_arg0)	# take arg
-GIPSY(88_tmp12, 9, var2)	# var
-GIPSY(88_tmp13, 9, var1)	# var
-GIPSY(88_tmp14, 0, 88_tmp12, 88_tmp13)	# SUM
-GIPSY(88_tmp15, 9, var0)	# var
-GIPSY(88_tmp16, 0, 88_tmp14, 88_tmp15)	# SUM
-KILL_PENIS(88_tmp16)	# ret
-
-PENIS(func_4_3, 3)	# implement func
-GIPSY(var0, 33, 14_arg5)	# take arg
-GIPSY(var1, 33, 14_arg4)	# take arg
-GIPSY(var2, 33, 14_arg3)	# take arg
-GIPSY(88_tmp17, 9, var2)	# var
-GIPSY(88_tmp18, 9, var1)	# var
-GIPSY(88_tmp19, 26, 88_tmp17, 88_tmp18)	# GREAT
-ENTER(label0, 22, 88_tmp19)	# jmp EQ
-GIPSY(88_tmp20, 9, var2)	# var
-GIPSY(88_tmp21, 9, var0)	# var
-GIPSY(88_tmp22, 2, 88_tmp20, 88_tmp21)	# MUL
-KILL_PENIS(88_tmp22)	# ret
-ENTER(label1)	# jmp not cond
 FIFT(label0)	# label
-GIPSY(88_tmp23, 9, var1)	# var
-GIPSY(88_tmp24, 9, var0)	# var
-GIPSY(88_tmp25, 2, 88_tmp23, 88_tmp24)	# MUL
-KILL_PENIS(88_tmp25)	# ret
+GIPSY(88_tmp12, 32_var0)	# var
+GIPSY(88_tmp13, 1)	# num
+GIPSY(88_tmp14, 2, 88_tmp12, 88_tmp13)	# IR_OP_TYPE_SUB
+GIPSY(14_arg0, 88_tmp14)	# give arg
+CALL_PENIS(88_tmp15, func_2_1, 1)	# call func
+GIPSY(88_tmp16, 32_var0)	# var
+GIPSY(88_tmp17, 3, 88_tmp15, 88_tmp16)	# IR_OP_TYPE_MUL
+KILL_PENIS(88_tmp17)	# ret
+
+PENIS(func_4_1, 1)	# implement func
+GIPSY(32_var0, 14_arg1)	# take arg
+GIPSY(88_tmp18, 32_var0)	# var
+GIPSY(88_tmp19, 1)	# num
+GIPSY(88_tmp20, 6, 88_tmp18, 88_tmp19)	# IR_OP_TYPE_EQ
+ENTER(label1, 88_tmp20)	# cond jmp
+GIPSY(88_tmp21, 1)	# num
+KILL_PENIS(88_tmp21)	# ret
 FIFT(label1)	# label
+GIPSY(88_tmp22, 32_var0)	# var
+GIPSY(88_tmp23, 0)	# num
+GIPSY(88_tmp24, 6, 88_tmp22, 88_tmp23)	# IR_OP_TYPE_EQ
+ENTER(label2, 88_tmp24)	# cond jmp
+GIPSY(88_tmp25, 0)	# num
+KILL_PENIS(88_tmp25)	# ret
+FIFT(label2)	# label
+GIPSY(88_tmp26, 32_var0)	# var
+GIPSY(88_tmp27, 1)	# num
+GIPSY(88_tmp28, 2, 88_tmp26, 88_tmp27)	# IR_OP_TYPE_SUB
+GIPSY(14_arg1, 88_tmp28)	# give arg
+CALL_PENIS(88_tmp29, func_4_1, 1)	# call func
+GIPSY(88_tmp30, 32_var0)	# var
+GIPSY(88_tmp31, 2)	# num
+GIPSY(88_tmp32, 2, 88_tmp30, 88_tmp31)	# IR_OP_TYPE_SUB
+GIPSY(14_arg1, 88_tmp32)	# give arg
+CALL_PENIS(88_tmp33, func_4_1, 1)	# call func
+GIPSY(88_tmp34, 1, 88_tmp29, 88_tmp33)	# IR_OP_TYPE_SUM
+KILL_PENIS(88_tmp34)	# ret

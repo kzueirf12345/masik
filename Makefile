@@ -162,13 +162,15 @@ libs_build:
 	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array/ && \
 	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger/ && \
 	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./utils/ && \
-	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/hash_table
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/hash_table && \
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/PYAM_IR
 
 libs_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/stack_on_array/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/ && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/hash_table
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/hash_table && \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/PYAM_IR
 
 
 clean: libs_clean frontend_clean midlend_clean backend_clean splu_clean
@@ -178,6 +180,7 @@ clean_all:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/stack_on_array 	&& \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/hash_table		&& \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/SPlU          	&& \
+	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/PYAM_IR          	&& \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./utils/ 				&& \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./frontend/          	&& \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./midlend/          		&& \

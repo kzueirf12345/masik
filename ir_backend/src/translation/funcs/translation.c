@@ -4,6 +4,7 @@
 #include "stack_on_array/libstack.h"
 #include "translation/funcs/funcs.h"
 #include "hash_table/libhash_table.h"
+#include "PYAM_IR/libpyam_ir.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -181,126 +182,6 @@ static void translator_dtor_(translator_t* const translator)
     IF_DEBUG(translator->arg_var_num = 0;)
 }
 
-#define IR_NUM_(assign_num_, num_)                                                                  \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(88_tmp%zu, %d, %ld)\t# num\n",                                                   \
-            assign_num_,                                                                            \
-            OP_TYPE_ASSIGNMENT,                                                                     \
-            num_                                                                                    \
-        )
-
-#define IR_VAR_(assign_num_, var_num_)                                                              \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(88_tmp%zu, %d, var%ld)\t# var\n",                                                \
-            assign_num_,                                                                            \
-            OP_TYPE_DECL_ASSIGNMENT,                                                                \
-            var_num_                                                                                \
-        )
-
-#define IR_GIVE_ARG_(arg_num_, operand1_)                                                           \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(14_arg%zu, %d, 88_tmp%zu)\t# give arg\n",                                        \
-            arg_num_,                                                                               \
-            OP_TYPE_ARGS_COMMA,                                                                     \
-            operand1_                                                                               \
-        )
-
-#define IR_TAKE_ARG_(assign_num_, arg_num_)                                                         \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(var%ld, %d, 14_arg%zu)\t# take arg\n",                                           \
-            assign_num_,                                                                            \
-            OP_TYPE_ARGS_COMMA,                                                                     \
-            arg_num_                                                                                \
-        )
-        
-#define IR_ASSIGN_(assign_num_, op_type_, operand1_, operand2_)                                     \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(88_tmp%zu, %d, 88_tmp%zu, 88_tmp%zu)\t# %s\n",                                   \
-            assign_num_,                                                                            \
-            op_type_,                                                                               \
-            operand1_,                                                                              \
-            operand2_,                                                                              \
-            op_type_to_str(op_type_)                                                                \
-        )
-
-#define IR_ASSIGN_VAR_(assign_var_, op_type_, operand1_)                                            \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "GIPSY(var%ld, %d, 88_tmp%zu)\t# %s\n",                                                 \
-            assign_var_,                                                                            \
-            op_type_,                                                                               \
-            operand1_,                                                                              \
-            op_type_to_str(op_type_)                                                                \
-        )
-
-#define IR_COND_JMP_(label_num_, op_type_, cond_res_)                                               \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "ENTER(label%zu, %d, 88_tmp%zu)\t# jmp %s\n",                                           \
-            label_num_,                                                                             \
-            op_type_,                                                                               \
-            cond_res_,                                                                              \
-            op_type_to_str(op_type_)                                                                \
-        )
-
-#define IR_JMP_(label_num_)                                                                         \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "ENTER(label%zu)\t# jmp not cond\n",                                                    \
-            label_num_                                                                              \
-        )
-
-#define IR_LABEL_(label_num_)                                                                       \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "FIFT(label%zu)\t# label\n",                                                            \
-            label_num_                                                                              \
-        )
-
-#define IR_CALL_FUNC_(assign_num_, func_num_, cnt_args_)                                            \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "CALL_PENIS(88_tmp%zu, func_%zu_%zu, %zu)\t# call func\n",                              \
-            assign_num_,                                                                            \
-            func_num_,                                                                              \
-            cnt_args_,                                                                              \
-            cnt_args_                                                                               \
-        )
-
-#define IR_CALL_MAIN_(assign_num_)                                                                  \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "CALL_PENIS(88_tmp%zu, main, 0)\t# call main\n",                                        \
-            assign_num_                                                                             \
-        )
-
-#define IR_IMPLEMENT_FUNC_(func_num_, cnt_args_)                                                    \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "\nPENIS(func_%zu_%zu, %zu)\t# implement func\n",                                       \
-            func_num_,                                                                              \
-            cnt_args_,                                                                              \
-            cnt_args_                                                                               \
-        )
-
-#define IR_IMPLEMENT_MAIN_()                                                                        \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "\nPENIS(main, 0)\t# implement main\n"                                                  \
-        )
-
-#define IR_RET_(ret_val_)                                                                           \
-        fprintf(                                                                                    \
-            out,                                                                                    \
-            "KILL_PENIS(88_tmp%zu)\t# ret\n",                                                       \
-            ret_val_                                                                                \
-        )
-
 
 #define OPERATION_HANDLE(num_, name_, keyword_, ...)                                                \
         static enum IrTranslationError translate_##name_(translator_t* const translator,            \
@@ -462,7 +343,7 @@ static enum IrTranslationError translate_SUM(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_SUM, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_SUM, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -481,7 +362,7 @@ static enum IrTranslationError translate_SUB(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_SUB, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_SUB, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -500,7 +381,7 @@ static enum IrTranslationError translate_MUL(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_MUL, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_MUL, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -519,7 +400,7 @@ static enum IrTranslationError translate_DIV(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_DIV, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_DIV, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -538,7 +419,7 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_POW, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_POW, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -598,7 +479,7 @@ static enum IrTranslationError translate_ASSIGNMENT(translator_t* const translat
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -627,7 +508,7 @@ static enum IrTranslationError translate_DECL_ASSIGNMENT(translator_t* const tra
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_DECL_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_DECL_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -681,7 +562,7 @@ static enum IrTranslationError translate_IF(translator_t* const translator, cons
 
     size_t label_else = USE_LABEL_();
 
-    IR_COND_JMP_(label_else, OP_TYPE_EQ, cond_res);
+    IR_COND_JMP_(label_else, cond_res);
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
@@ -786,7 +667,7 @@ static enum IrTranslationError translate_WHILE(translator_t* const translator, c
         const size_t cond_res = translator->temp_var_num - 1;
         label_else = USE_LABEL_();
 
-        IR_COND_JMP_(label_else, OP_TYPE_EQ, cond_res);
+        IR_COND_JMP_(label_else, cond_res);
 
         label_body = USE_LABEL_();
 
@@ -801,7 +682,7 @@ static enum IrTranslationError translate_WHILE(translator_t* const translator, c
     const size_t cond_res = translator->temp_var_num - 1;
     label_end = USE_LABEL_();
 
-    IR_COND_JMP_(label_end, OP_TYPE_EQ, cond_res);
+    IR_COND_JMP_(label_end, cond_res);
 
     IR_LABEL_(label_body);
 
@@ -842,7 +723,7 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_POW_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_POW_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -862,7 +743,7 @@ static enum IrTranslationError translate_SUM_ASSIGNMENT(translator_t* const tran
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_SUM_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_SUM_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -882,7 +763,7 @@ static enum IrTranslationError translate_SUB_ASSIGNMENT(translator_t* const tran
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_SUB_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_SUB_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -902,7 +783,7 @@ static enum IrTranslationError translate_MUL_ASSIGNMENT(translator_t* const tran
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_MUL_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_MUL_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -922,7 +803,7 @@ static enum IrTranslationError translate_DIV_ASSIGNMENT(translator_t* const tran
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, OP_TYPE_DIV_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_DIV_ASSIGNMENT, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -941,7 +822,7 @@ static enum IrTranslationError translate_EQ(translator_t* const translator, cons
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_EQ, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_EQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -960,7 +841,7 @@ static enum IrTranslationError translate_NEQ(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_NEQ, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_NEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -979,7 +860,7 @@ static enum IrTranslationError translate_LESS(translator_t* const translator, co
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_LESS, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_LESS, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -998,7 +879,7 @@ static enum IrTranslationError translate_LESSEQ(translator_t* const translator, 
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_LESSEQ, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_LESSEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -1017,7 +898,7 @@ static enum IrTranslationError translate_GREAT(translator_t* const translator, c
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_GREAT, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_GREAT, first_op, second_op);
 
 
     return IR_TRANSLATION_ERROR_SUCCESS;
@@ -1037,7 +918,7 @@ static enum IrTranslationError translate_GREATEQ(translator_t* const translator,
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, OP_TYPE_GREATEQ, first_op, second_op);
+    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_GREATEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -1108,8 +989,6 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
 
     IR_IMPLEMENT_FUNC_(func.num, func.count_args);
-
-    STACK_DUMB(translator->vars, NULL);
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
