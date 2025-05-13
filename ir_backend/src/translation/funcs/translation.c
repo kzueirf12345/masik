@@ -4,7 +4,9 @@
 #include "stack_on_array/libstack.h"
 #include "translation/funcs/funcs.h"
 #include "hash_table/libhash_table.h"
-#include "PYAM_IR/libpyam_ir.h"
+#define IR_file out
+#define NUM_SPECIFER_ "%ld"
+#include "PYAM_IR/include/libpyam_ir.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -42,7 +44,7 @@ typedef struct Translator
     stack_key_t funcs;
     size_t label_num;
     size_t temp_var_num;
-    long var_num_base;
+    long long int var_num_base;
     size_t arg_var_num;
 
     smash_map_t func_arg_num;
@@ -205,6 +207,7 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
     IR_TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
 
     IR_CALL_MAIN_(translator.temp_var_num++);
+    IR_GLOBAL_VARS_NUM_(0); //hard cock
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
                                 translator_dtor_(&translator);
@@ -226,11 +229,11 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
 #define CHECK_DECLD_VAR_(result_, elem_)                                                            \
     do {                                                                                            \
         size_t* founded_elem = NULL;                                                                \
-        long base_counter = translator->var_num_base + (long)CUR_VAR_STACK_SIZE_;                   \
+        long long int base_counter = translator->var_num_base + (long long int)CUR_VAR_STACK_SIZE_;                   \
         for (size_t stack_ind = stack_size(translator->vars); stack_ind > 0; --stack_ind)           \
         {                                                                                           \
             const stack_key_t stack = *(stack_key_t*)stack_get(translator->vars, stack_ind - 1);    \
-            base_counter -= (long)stack_size(stack);                                                \
+            base_counter -= (long long int)stack_size(stack);                                                \
             if ((founded_elem = (size_t*)stack_find(stack, &elem_->lexem.data.var, NULL)))          \
             {                                                                                       \
                 result_ = base_counter                                                              \
@@ -293,16 +296,16 @@ enum IrTranslationError translate_recursive_(translator_t* const translator, con
     {
     case LEXEM_TYPE_NUM:
     {
-        IR_NUM_(translator->temp_var_num++, elem->lexem.data.num);
+        IR_ASSIGN_TMP_NUM_(translator->temp_var_num++, elem->lexem.data.num);
         break;
     }
 
     case LEXEM_TYPE_VAR:
     {
-        long var_ind = 0;
+        long long int var_ind = 0;
         CHECK_DECLD_VAR_(var_ind, elem);
 
-        IR_VAR_(translator->temp_var_num++, var_ind);
+        IR_ASSIGN_TMP_VAR_(translator->temp_var_num++, var_ind, "");
         break;
     }
 
@@ -343,7 +346,7 @@ static enum IrTranslationError translate_SUM(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_SUM, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_SUM, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -362,7 +365,7 @@ static enum IrTranslationError translate_SUB(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_SUB, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_SUB, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -381,7 +384,7 @@ static enum IrTranslationError translate_MUL(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_MUL, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_MUL, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -400,7 +403,7 @@ static enum IrTranslationError translate_DIV(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_DIV, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_DIV, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -419,7 +422,7 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_POW, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_POW, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -472,14 +475,14 @@ static enum IrTranslationError translate_ASSIGNMENT(translator_t* const translat
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, second_op, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -495,7 +498,7 @@ static enum IrTranslationError translate_DECL_ASSIGNMENT(translator_t* const tra
     CHECK_UNDECLD_VAR_(elem->lt);
     STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &elem->lt->lexem.data.var));
 
-    const long first_op = translator->var_num_base + (long)(CUR_VAR_STACK_SIZE_ - 1);
+    const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
 
     if (elem->rt)
     {
@@ -503,12 +506,12 @@ static enum IrTranslationError translate_DECL_ASSIGNMENT(translator_t* const tra
     }
     else
     {
-        IR_NUM_(translator->temp_var_num++, 0l);
+        IR_ASSIGN_TMP_NUM_(translator->temp_var_num++, 0l);
     }
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_DECL_ASSIGNMENT, second_op);
+    IR_ASSIGN_VAR_(first_op, second_op, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -531,7 +534,7 @@ static enum IrTranslationError create_new_var_frame_(translator_t* const transla
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    translator->var_num_base += (long)CUR_VAR_STACK_SIZE_;
+    translator->var_num_base += (long long int)CUR_VAR_STACK_SIZE_;
     stack_key_t stack_temp = 0;
     STACK_ERROR_HANDLE_(STACK_CTOR(&stack_temp, sizeof(size_t), 10));
     STACK_ERROR_HANDLE_(stack_push(&translator->vars, &stack_temp));
@@ -545,7 +548,7 @@ static enum IrTranslationError delete_top_var_frame_(translator_t* const transla
 
     stack_dtor(CUR_VAR_STACK_);
     STACK_ERROR_HANDLE_(stack_pop(&translator->vars, NULL));
-    translator->var_num_base -= (long)CUR_VAR_STACK_SIZE_;
+    translator->var_num_base -= (long long int)CUR_VAR_STACK_SIZE_;
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -562,7 +565,7 @@ static enum IrTranslationError translate_IF(translator_t* const translator, cons
 
     size_t label_else = USE_LABEL_();
 
-    IR_COND_JMP_(label_else, cond_res);
+    IR_COND_JMP_(label_else, cond_res, "check IF condition, jmp to else");
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
@@ -572,20 +575,20 @@ static enum IrTranslationError translate_IF(translator_t* const translator, cons
 
         size_t label_end = USE_LABEL_();
 
-        IR_JMP_(label_end);
-        IR_LABEL_(label_else);
+        IR_JMP_(label_end, "jmp to end IF");
+        IR_LABEL_(label_else, "label else for IF");
 
         STACK_ERROR_HANDLE_(stack_clean(CUR_VAR_STACK_));
 
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->rt, out));
 
-        IR_LABEL_(label_end);
+        IR_LABEL_(label_end, "label end for IF");
     }
     else
     {
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->lt, out));
 
-        IR_LABEL_(label_else);
+        IR_LABEL_(label_else, "label else for IF");
     }
 
     IR_TRANSLATION_ERROR_HANDLE(delete_top_var_frame_(translator));
@@ -667,41 +670,41 @@ static enum IrTranslationError translate_WHILE(translator_t* const translator, c
         const size_t cond_res = translator->temp_var_num - 1;
         label_else = USE_LABEL_();
 
-        IR_COND_JMP_(label_else, cond_res);
+        IR_COND_JMP_(label_else, cond_res, "first check WHILE condition, jmp to else");
 
         label_body = USE_LABEL_();
 
-        IR_JMP_(label_body);
+        IR_JMP_(label_body, "jump to body WHILE");
     }
 
     label_condition = USE_LABEL_();
-    IR_LABEL_(label_condition);
+    IR_LABEL_(label_condition, "start condition WHILE");
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
     const size_t cond_res = translator->temp_var_num - 1;
     label_end = USE_LABEL_();
 
-    IR_COND_JMP_(label_end, cond_res);
+    IR_COND_JMP_(label_end, cond_res, "second check WHILE condition, jmp to end");
 
-    IR_LABEL_(label_body);
+    IR_LABEL_(label_body, "start body WHILE");
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->lt, out));
 
-    IR_JMP_(label_condition);
+    IR_JMP_(label_condition, "jump to condition WHILE");
 
     if (elem->rt->rt)
     {
         STACK_ERROR_HANDLE_(stack_clean(CUR_VAR_STACK_));
 
-        IR_LABEL_(label_else);
+        IR_LABEL_(label_else, "start else WHILE");
 
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt->rt, out));
     }
 
-    IR_LABEL_(label_end);
+    IR_LABEL_(label_end, "end WHILE");
 
     IR_TRANSLATION_ERROR_HANDLE(delete_top_var_frame_(translator));
 
@@ -716,14 +719,19 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_POW_ASSIGNMENT, second_op);
+    const size_t first_op_tmp = translator->temp_var_num++;
+    const size_t op_res_tmp = translator->temp_var_num++;
+
+    IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
+    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_POW, first_op_tmp, second_op);
+    IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -736,14 +744,19 @@ static enum IrTranslationError translate_SUM_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_SUM_ASSIGNMENT, second_op);
+    const size_t first_op_tmp = translator->temp_var_num++;
+    const size_t op_res_tmp = translator->temp_var_num++;
+
+    IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
+    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_SUM, first_op_tmp, second_op);
+    IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -756,14 +769,19 @@ static enum IrTranslationError translate_SUB_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_SUB_ASSIGNMENT, second_op);
+    const size_t first_op_tmp = translator->temp_var_num++;
+    const size_t op_res_tmp = translator->temp_var_num++;
+
+    IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
+    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_SUB, first_op_tmp, second_op);
+    IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -776,14 +794,19 @@ static enum IrTranslationError translate_MUL_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_MUL_ASSIGNMENT, second_op);
+    const size_t first_op_tmp = translator->temp_var_num++;
+    const size_t op_res_tmp = translator->temp_var_num++;
+
+    IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
+    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_MUL, first_op_tmp, second_op);
+    IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -796,14 +819,19 @@ static enum IrTranslationError translate_DIV_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
-    long first_op = 0;
+    long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_VAR_(first_op, IR_OP_TYPE_DIV_ASSIGNMENT, second_op);
+    const size_t first_op_tmp = translator->temp_var_num++;
+    const size_t op_res_tmp = translator->temp_var_num++;
+
+    IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
+    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_DIV, first_op_tmp, second_op);
+    IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -822,7 +850,7 @@ static enum IrTranslationError translate_EQ(translator_t* const translator, cons
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_EQ, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_EQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -841,7 +869,7 @@ static enum IrTranslationError translate_NEQ(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_NEQ, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_NEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -860,7 +888,7 @@ static enum IrTranslationError translate_LESS(translator_t* const translator, co
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_LESS, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_LESS, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -879,7 +907,7 @@ static enum IrTranslationError translate_LESSEQ(translator_t* const translator, 
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_LESSEQ, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_LESSEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -898,7 +926,7 @@ static enum IrTranslationError translate_GREAT(translator_t* const translator, c
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_GREAT, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_GREAT, first_op, second_op);
 
 
     return IR_TRANSLATION_ERROR_SUCCESS;
@@ -918,7 +946,7 @@ static enum IrTranslationError translate_GREATEQ(translator_t* const translator,
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_ASSIGN_(translator->temp_var_num++, IR_OP_TYPE_GREATEQ, first_op, second_op);
+    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_GREATEQ, first_op, second_op);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -975,6 +1003,12 @@ static enum IrTranslationError init_func_(translator_t* const translator, const 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
 
+//FIXME
+//FIXME
+//FIXME
+//FIXME
+//FIXME
+
 static enum IrTranslationError translate_FUNC(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
@@ -988,7 +1022,7 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     CHECK_UNDECLD_FUNC_(func);
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
 
-    IR_IMPLEMENT_FUNC_(func.num, func.count_args);
+    IR_FUNCTION_BODY_(func.num, func.count_args, 0lu /*FIXME - count in front*/, ""); 
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
@@ -998,20 +1032,20 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
         CHECK_UNDECLD_VAR_(arg->rt);
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->rt->lexem.data.var));
 
-        const long first_op = translator->var_num_base + (long)(CUR_VAR_STACK_SIZE_ - 1);
+        const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
         const size_t second_op = start_arg_num + func.count_args - count;
 
-        IR_TAKE_ARG_(first_op, second_op);
+        IR_TAKE_ARG_(first_op, second_op, "");
     }
     if (func.count_args != 0)
     {
         CHECK_UNDECLD_VAR_(arg);
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
 
-        const long first_op = translator->var_num_base + (long)(CUR_VAR_STACK_SIZE_ - 1);
+        const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
         const size_t second_op = start_arg_num;
         
-        IR_TAKE_ARG_(first_op, second_op);
+        IR_TAKE_ARG_(first_op, second_op, "");
     }
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
@@ -1051,7 +1085,7 @@ static enum IrTranslationError translate_FUNC_LBRAKET(translator_t* const transl
         IR_GIVE_ARG_(first_op, second_op);
     }
 
-    IR_CALL_FUNC_(translator->temp_var_num++, func.num, func.count_args);
+    IR_CALL_FUNC_(translator->temp_var_num++, func.num, func.count_args, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -1076,7 +1110,7 @@ static enum IrTranslationError translate_MAIN(translator_t* const translator, co
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
-    IR_IMPLEMENT_MAIN_();
+    IR_MAIN_BODY_(0ul /*FIXME - count in front*/);
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
