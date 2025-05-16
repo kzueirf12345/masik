@@ -189,8 +189,17 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
     translator_t translator = {};
     IR_TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
 
-    IR_CALL_MAIN_(translator.temp_var_num++);
+    const size_t ret_main_tmp = translator.temp_var_num++;
+    
     IR_GLOBAL_VARS_NUM_(0ul); //hard cock
+    IR_CALL_MAIN_(ret_main_tmp);
+
+    IR_GIVE_ARG_(translator.arg_var_num, ret_main_tmp);
+    translator.arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].NumberOfArguments;
+    IR_SYSCALL_(translator.temp_var_num++, 
+        kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].Name, 
+        kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].NumberOfArguments
+    );
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
                                 translator_dtor_(&translator);
