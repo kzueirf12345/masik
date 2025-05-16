@@ -38,3 +38,5 @@ OPERATION_HANDLE(33,    ARGS_COMMA,         L"ещё"                  , false  
 OPERATION_HANDLE(34,    CALL_FUNC_LBRAKET,  L":-)"                  , false         )
 OPERATION_HANDLE(35,    CALL_FUNC_RBRAKET,  L";-)"                  , false         )
 OPERATION_HANDLE(36,    RET,                L"кладу_трубочку"       , false         )
+OPERATION_HANDLE(37,    OUT,                L"снять_денюжки"        , false         )
+OPERATION_HANDLE(38,    IN,                 L"положить_денюжки"     , false         )

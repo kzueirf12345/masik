@@ -397,6 +397,29 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
+    func_t func = {
+        .num = SIZE_MAX - SYSCALL_POW_INDEX, 
+        .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
+    };
+
+    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
+    size_t start_arg_num = translator->arg_var_num;
+
+    if (!start_arg_num_ptr)
+    {
+        SMASH_MAP_ERROR_HANDLE_(
+            smash_map_insert(
+                &translator->func_arg_num, 
+                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+            )
+        );
+        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments;
+    }
+    else
+    {
+        start_arg_num = *start_arg_num_ptr;
+    }
+
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
     const size_t first_op = translator->temp_var_num - 1;
@@ -405,7 +428,9 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    //FIXME
+    IR_GIVE_ARG_(start_arg_num    , first_op);
+    IR_GIVE_ARG_(start_arg_num + 1, second_op);
+
     IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
     );
@@ -705,6 +730,29 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
 
     lassert(elem->lt->lexem.type == LEXEM_TYPE_VAR, "");
 
+    func_t func = {
+        .num = SIZE_MAX - SYSCALL_POW_INDEX, 
+        .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
+    };
+
+    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
+    size_t start_arg_num = translator->arg_var_num;
+
+    if (!start_arg_num_ptr)
+    {
+        SMASH_MAP_ERROR_HANDLE_(
+            smash_map_insert(
+                &translator->func_arg_num, 
+                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+            )
+        );
+        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments;
+    }
+    else
+    {
+        start_arg_num = *start_arg_num_ptr;
+    }
+
     long long int first_op = 0;
     CHECK_DECLD_VAR_(first_op, elem->lt);
 
@@ -716,8 +764,11 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
     const size_t op_res_tmp = translator->temp_var_num++;
 
     IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
-    //FIXME
-    IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
+
+    IR_GIVE_ARG_(start_arg_num    , first_op_tmp);
+    IR_GIVE_ARG_(start_arg_num + 1, second_op);
+
+    IR_SYSCALL_(op_res_tmp, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
     );
     IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
@@ -1159,6 +1210,125 @@ static enum IrTranslationError translate_RET(translator_t* const translator, con
     const size_t ret_val = translator->temp_var_num - 1;
 
     IR_RET_(ret_val);
+
+    return IR_TRANSLATION_ERROR_SUCCESS;
+}
+
+static enum IrTranslationError translate_IN(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+{
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(elem), "");
+    lassert(!is_invalid_ptr(out), "");
+
+    size_t count_args = (elem->lt != NULL);
+
+    for (const tree_elem_t* tree_ptr = elem->lt; tree_ptr != NULL; tree_ptr = tree_ptr->lt)
+    {
+        count_args += (tree_ptr->lexem.type    == LEXEM_TYPE_OP 
+                    && tree_ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
+    }
+
+    long long int* arr_vars = calloc(count_args, sizeof(*arr_vars));
+
+    const tree_elem_t* arg = elem->lt;
+    for (size_t count = 1; count < count_args; ++count, arg = arg->lt)
+    {
+        long long int var_in = 0;
+        CHECK_DECLD_VAR_(var_in, arg->rt);
+        arr_vars[count - 1] = var_in;
+    }
+    if (count_args != 0)
+    {
+        long long int var_in = 0;
+        CHECK_DECLD_VAR_(var_in, arg);
+        arr_vars[count_args - 1] = var_in;
+    }
+
+    for (size_t var_ind = 0; var_ind < count_args; ++var_ind)
+    {
+        long long int var = arr_vars[count_args - var_ind - 1];
+        const size_t tmp_num = translator->temp_var_num++;
+
+        IR_SYSCALL_(
+            tmp_num, 
+            kIR_SYS_CALL_ARRAY[SYSCALL_IN_INDEX].Name, 
+            kIR_SYS_CALL_ARRAY[SYSCALL_IN_INDEX].NumberOfArguments
+        );
+
+        IR_ASSIGN_VAR_(var, tmp_num, "IN arg");
+    }
+
+    free(arr_vars);
+
+    return IR_TRANSLATION_ERROR_SUCCESS;
+}
+
+
+static enum IrTranslationError translate_OUT(translator_t* const translator, const tree_elem_t* elem, FILE* out)
+{
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(elem), "");
+    lassert(!is_invalid_ptr(out), "");
+
+    func_t func = {
+        .num = SIZE_MAX - SYSCALL_OUT_INDEX, 
+        .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].NumberOfArguments
+    };
+
+    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
+    size_t start_arg_num = translator->arg_var_num;
+
+    if (!start_arg_num_ptr)
+    {
+        SMASH_MAP_ERROR_HANDLE_(
+            smash_map_insert(
+                &translator->func_arg_num, 
+                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+            )
+        );
+        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].NumberOfArguments;
+    }
+    else
+    {
+        start_arg_num = *start_arg_num_ptr;
+    }
+
+    size_t count_args = (elem->lt != NULL);
+
+    for (const tree_elem_t* tree_ptr = elem->lt; tree_ptr != NULL; tree_ptr = tree_ptr->lt)
+    {
+        count_args += (tree_ptr->lexem.type    == LEXEM_TYPE_OP 
+                    && tree_ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
+    }
+
+    const tree_elem_t** arr_vars = calloc(count_args, sizeof(*arr_vars));
+
+    const tree_elem_t* arg = elem->lt;
+    for (size_t count = 1; count < count_args; ++count, arg = arg->lt)
+    {
+        arr_vars[count - 1] = arg->rt;
+    }
+    if (count_args != 0)
+    {
+        arr_vars[count_args - 1] = arg;
+    }
+
+    for (size_t var_ind = 0; var_ind < count_args; ++var_ind)
+    {
+        arg = arr_vars[count_args - var_ind - 1];
+        IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
+        size_t argument = translator->temp_var_num - 1;
+
+        IR_GIVE_ARG_(start_arg_num, argument);
+
+        IR_SYSCALL_(
+            translator->temp_var_num++, 
+            kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].Name, 
+            kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].NumberOfArguments
+        );
+    }
+
+    free(arr_vars);
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }

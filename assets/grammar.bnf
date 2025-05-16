@@ -5,7 +5,7 @@
 <vars> ::= <NAME> ("ещё" <NAME>)*
 
 <statement> ::= <if> | <while> 
-             | ((<declaration> | <assignment> | <ret>)? ("пж-пж")+)
+             | ((<declaration> | <assignment> | <ret> | <sysfunc_void>)? ("пж-пж")+)
 
 <assignment> ::=  <NAME> 
         ("всего_за" 
@@ -28,12 +28,15 @@
 <mul> ::= <pow> (("звёздочка" | "очень_минусик") <pow>)*
 <pow> ::= <brackets> ("очень_звёздочка" <pow>)*
 <brackets> ::= ":-)" <expr> ";-)" | <var_num_func>
-<var_num_func> ::= <NUM> | <call_func> | <NAME> 
+<var_num_func> ::= <NUM> | <call_func> | <NAME>
 
 <call_func> ::= <NAME> ":-)" <args>? ";-)"
 <args> ::= <expr> ("ещё" <expr>)*
 <ret> ::= "кладу_трубочку" <expr>
 
+<sysfunc_void> ::= <out> | <in>
+<out> ::= "снять_денюжки" ":-)" <args> ";-)"
+<in> ::= "положить_денюжки" ":-)" <args> ";-)"
 
 <declaration> ::= "купи" <NAME> ("всего_за" <expr>)?
 

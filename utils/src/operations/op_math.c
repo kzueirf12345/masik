@@ -239,3 +239,17 @@ num_t math_RET(const num_t first, const num_t second)
     fprintf(stderr, "%s isn't ariphmetic\n", __func__);
     return NUM_POISON;
 }
+num_t math_IN(const num_t first, const num_t second)
+{
+    (void)first;
+    (void)second;
+    fprintf(stderr, "%s isn't ariphmetic\n", __func__);
+    return NUM_POISON;
+}
+num_t math_OUT(const num_t first, const num_t second)
+{
+    (void)first;
+    (void)second;
+    fprintf(stderr, "%s isn't ariphmetic\n", __func__);
+    return NUM_POISON;
+}

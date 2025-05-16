@@ -54,6 +54,10 @@ tree_elem_t* desc_var_num_func_ (desc_state_t* const desc_state);
 tree_elem_t* desc_call_func_    (desc_state_t* const desc_state);
 tree_elem_t* desc_ret_          (desc_state_t* const desc_state);
 
+tree_elem_t* desc_sysfunc_void_ (desc_state_t* const desc_state);
+tree_elem_t* desc_out_          (desc_state_t* const desc_state);
+tree_elem_t* desc_in_           (desc_state_t* const desc_state);
+
 tree_elem_t* desc_declaration_  (desc_state_t* const desc_state);
 
 tree_elem_t* desc_if_           (desc_state_t* const desc_state);
@@ -428,14 +432,20 @@ tree_elem_t* desc_statement_(desc_state_t* const desc_state)
 
             elem = desc_ret_(desc_state);
 
-                // fprintf(stderr, "op_type: %s\n", op_type_to_str(CUR_LEX_.data.op));
-
             if (IS_FAILURE_)
             {
-                // fprintf(stderr, "kek\n");
                 RESET_ERRORS_;
                 CUR_IND_ = old_ind;
                 tree_elem_dtor_recursive_(&elem);
+
+                elem = desc_sysfunc_void_(desc_state);
+
+                if (IS_FAILURE_)
+                {
+                    RESET_ERRORS_;
+                    CUR_IND_ = old_ind;
+                    tree_elem_dtor_recursive_(&elem);
+                }
             }
         }
     }
@@ -446,7 +456,6 @@ tree_elem_t* desc_statement_(desc_state_t* const desc_state)
     {
         is_please = true;
         SHIFT_;
-        // fprintf(stderr, "kek\n");
     }
 
     if (!is_please)
@@ -766,6 +775,94 @@ tree_elem_t* desc_ret_(desc_state_t* const desc_state)
     // fprintf(stderr, "op_type1_ret: %s\n", op_type_to_str(CUR_LEX_.data.op));
 
     return CREATE_ELEM_(lexem, elem_lt, NULL);
+}
+
+tree_elem_t* desc_sysfunc_void_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    size_t old_ind = CUR_IND_;
+
+    tree_elem_t* elem = desc_out_(desc_state);
+    if (!IS_FAILURE_)
+    {
+        return elem;
+    }
+    tree_elem_dtor_recursive_(&elem);
+    CUR_IND_ = old_ind;
+    RESET_ERRORS_;
+
+    elem = desc_in_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&elem););
+    }
+
+    return elem;
+}
+
+tree_elem_t* desc_out_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(OUT))
+    {
+        RET_FAILURE_();
+    }
+    lexem_t lexem = CUR_LEX_;
+    SHIFT_;
+
+    if (!IS_OP_TYPE_(LBRAKET))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    tree_elem_t* args = desc_args_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&args););
+    }
+
+    if (!IS_OP_TYPE_(RBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&args););
+    }
+    SHIFT_;
+
+    return CREATE_ELEM_(lexem, args, NULL);
+}
+
+tree_elem_t* desc_in_(desc_state_t* const desc_state)
+{
+    CHECK_ERROR_();
+
+    if (!IS_OP_TYPE_(IN))
+    {
+        RET_FAILURE_();
+    }
+    lexem_t lexem = CUR_LEX_;
+    SHIFT_;
+
+    if (!IS_OP_TYPE_(LBRAKET))
+    {
+        RET_FAILURE_();
+    }
+    SHIFT_;
+
+    tree_elem_t* args = desc_args_(desc_state);
+    if (IS_FAILURE_)
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&args););
+    }
+
+    if (!IS_OP_TYPE_(RBRAKET))
+    {
+        RET_FAILURE_(tree_elem_dtor_recursive_(&args););
+    }
+    SHIFT_;
+
+    return CREATE_ELEM_(lexem, args, NULL);
 }
 
 tree_elem_t* desc_declaration_(desc_state_t* const desc_state) 
