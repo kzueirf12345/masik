@@ -47,20 +47,16 @@ int logger_init(char* const log_folder);
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
 {
+    lassert(!is_invalid_ptr(flags_objs), "");
     lassert(argc, "");
     lassert(argv, "");
 
-    if (!setlocale(LC_ALL, "ru_RU.utf8"))
-    {
-        fprintf(stderr, "Can't setlocale\n");
-        return EXIT_FAILURE;
-    }
-
     FLAGS_ERROR_HANDLE(flags_objs_ctor (flags_objs));
-    FLAGS_ERROR_HANDLE(flags_processing(flags_objs, argc, argv));
+    FLAGS_ERROR_HANDLE(flags_processing(flags_objs, argc, argv),      flags_objs_dtor(flags_objs););
 
     if (logger_init(flags_objs->log_folder))
     {
+                                                                        flags_objs_dtor(flags_objs);
         fprintf(stderr, "Can't logger init\n");
         return EXIT_FAILURE;
     }
@@ -70,6 +66,8 @@ int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv)
 
 int dtor_all(flags_objs_t* const flags_objs)
 {
+    lassert(!is_invalid_ptr(flags_objs), "");
+
     LOGG_ERROR_HANDLE(                                                               logger_dtor());
     TREE_DUMB_ERROR_HANDLE(                                                       tree_dumb_dtor());
     FLAGS_ERROR_HANDLE(                                                flags_objs_dtor(flags_objs));
@@ -81,7 +79,7 @@ int dtor_all(flags_objs_t* const flags_objs)
 #define   DUMB_FILENAME "dumb"
 int logger_init(char* const log_folder)
 {
-    lassert(log_folder, "");
+    lassert(!is_invalid_ptr(log_folder), "");
 
     char logout_filename[FILENAME_MAX] = {};
     if (snprintf(logout_filename, FILENAME_MAX, "%s%s", log_folder, LOGOUT_FILENAME) <= 0)
@@ -98,11 +96,11 @@ int logger_init(char* const log_folder)
     }
 
     LOGG_ERROR_HANDLE(logger_ctor());
-    LOGG_ERROR_HANDLE(logger_set_level_details(LOG_LEVEL_DETAILS_ALL));
-    LOGG_ERROR_HANDLE(logger_set_logout_file(logout_filename));
+    LOGG_ERROR_HANDLE(logger_set_level_details(LOG_LEVEL_DETAILS_ALL),              logger_dtor(););
+    LOGG_ERROR_HANDLE(logger_set_logout_file(logout_filename),                      logger_dtor(););
 
-    TREE_DUMB_ERROR_HANDLE(tree_dumb_ctor());
-    TREE_DUMB_ERROR_HANDLE(tree_dumb_set_out_file(dumb_filename));
+    TREE_DUMB_ERROR_HANDLE(tree_dumb_ctor(),                                        logger_dtor(););
+    TREE_DUMB_ERROR_HANDLE(tree_dumb_set_out_file(dumb_filename),  tree_dumb_dtor();logger_dtor(););
     
     return EXIT_SUCCESS;
 }

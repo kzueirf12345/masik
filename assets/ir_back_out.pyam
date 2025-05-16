@@ -1,102 +1,95 @@
 
 RingRing(tmp0, main)	# call main
+Gg(0)
 
-Gyat(main, 0, 0)	# implement main
-	Gnoming(tmp1, 1500 )
+Gyat(main, 0, 3)	# implement main
+	Gnoming(tmp1, 3 )
 	Gnoming(var0, tmp1)	# Variable: 
-	Gnoming(tmp2, 3 )
-	Gnoming(var1, tmp2)	# Variable: 
-	Gnoming(tmp3, 22 )
-	Gnoming(var2, tmp3)	# Variable: 
-	Gnoming(tmp4, 1 )
-	Gnoming(var3, tmp4)	# Variable: 
-	Gnoming(tmp5, 0 )
-	Gnoming(var4, tmp5)	# Variable: 
-	Gnoming(tmp6, 0 )
-	Gnoming(var5, tmp6)	# Variable: 
-	Gnoming(tmp7, var2)	 # 
-	Gnoming(tmp8, 18 )
-	Digging(tmp9, 10, tmp7, tmp8)	# IR_OP_TYPE_GREAT
+	Gnoming(tmp2, var0)	 # 
+	Gnoming(arg0, tmp2)
 
-Frog(label0, tmp9)	# check IF condition, jmp to else
-	Gnoming(tmp10, 1 )
-	Gnoming(var4, tmp10)	# Variable: 
-	Gnoming(tmp11, var0)	 # 
-	Gnoming(tmp12, 1000 )
-	Digging(tmp13, 10, tmp11, tmp12)	# IR_OP_TYPE_GREAT
+RingRing(tmp3, func_2_1)	# 
 
-Frog(label1, tmp13)	# check IF condition, jmp to else
-	Gnoming(tmp14, var0)	 # 
-	Gnoming(tmp15, 5 )
-	Digging(tmp16, 4, tmp14, tmp15)	# IR_OP_TYPE_DIV
+	Gnoming(var1, tmp3)	# Variable: 
+	Gnoming(tmp4, var1)	 # 
+	Gnoming(arg1, tmp4)
 
-	Gnoming(var6, tmp16)	# Variable: 
-	Gnoming(tmp17, var1)	 # 
-	Gnoming(tmp18, 3 )
-	Digging(tmp19, 6, tmp17, tmp18)	# IR_OP_TYPE_EQ
+RingRing(tmp5, func_4_1)	# 
 
-Frog(label2, tmp19)	# check IF condition, jmp to else
-	Gnoming(tmp20, var6)	 # 
-	Gnoming(tmp21, 2 )
-	Digging(tmp22, 3, tmp20, tmp21)	# IR_OP_TYPE_MUL
+	Gnoming(var2, tmp5)	# Variable: 
+	Gnoming(tmp6, var2)	 # 
+	Gnoming(arg0, tmp6)
 
-	Gnoming(var5, tmp22)	# Variable: 
-	Gnoming(tmp23, var0)	 # 
-	Gnoming(tmp24, var5)	 # 
-	Digging(tmp25, 1, tmp23, tmp24)	# IR_OP_TYPE_SUM
+RingRing(tmp7, func_2_1)	# 
 
-	Gnoming(var0, tmp25)	# Variable: 
-Frog(label3, 1)	# jmp to end IF
 
-Viperr(label2)	# label else for IF
-	Gnoming(tmp26, var6)	 # 
-	Gnoming(tmp27, 50 )
-	Digging(tmp28, 1, tmp26, tmp27)	# IR_OP_TYPE_SUM
+	Cherepovec(tmp7)
 
-	Gnoming(var5, tmp28)	# Variable: 
+Gyat(func_2_1, 1, 1)	# 
+	Gnoming(var0, arg0)	 # Variable: 
+	Gnoming(tmp8, var0)	 # 
+	Gnoming(tmp9, 1 )
+	Digging(tmp10, 5, tmp8, tmp9)	# IR_OP_TYPE_EQ
 
-Viperr(label3)	# label end for IF
-Frog(label4, 1)	# jmp to end IF
+Frog(label0, tmp10)	# check IF condition, jmp to else
+	Gnoming(tmp11, 1 )
 
-Viperr(label1)	# label else for IF
-	Gnoming(tmp29, 0 )
-	Gnoming(var5, tmp29)	# Variable: 
-
-Viperr(label4)	# label end for IF
-Frog(label5, 1)	# jmp to end IF
+	Cherepovec(tmp11)
 
 Viperr(label0)	# label else for IF
-	Gnoming(tmp30, 0 )
-	Gnoming(var4, tmp30)	# Variable: 
-	Gnoming(tmp31, 0 )
-	Gnoming(var5, tmp31)	# Variable: 
+	Gnoming(tmp12, var0)	 # 
+	Gnoming(tmp13, 1 )
+	Digging(tmp14, 2, tmp12, tmp13)	# IR_OP_TYPE_SUB
 
-Viperr(label5)	# label end for IF
-	Gnoming(tmp32, var0)	 # 
-	Gnoming(tmp33, var5)	 # 
-	Digging(tmp34, 1, tmp32, tmp33)	# IR_OP_TYPE_SUM
+	Gnoming(arg0, tmp14)
 
-	Gnoming(var6, tmp34)	# Variable: 
-	Gnoming(tmp35, var4)	 # 
-	Gnoming(tmp36, var1)	 # 
-	Digging(tmp37, 3, tmp35, tmp36)	# IR_OP_TYPE_MUL
+RingRing(tmp15, func_2_1)	# 
 
-	Gnoming(var7, tmp37)	# Variable: 
-	Gnoming(tmp38, var6)	 # 
-	Gnoming(tmp39, 2000 )
-	Digging(tmp40, 10, tmp38, tmp39)	# IR_OP_TYPE_GREAT
-
-Frog(label6, tmp40)	# check IF condition, jmp to else
-	Gnoming(tmp41, 1 )
-	Gnoming(var3, tmp41)	# Variable: 
-
-Viperr(label6)	# label else for IF
-	Gnoming(tmp42, var7)	 # 
-	Gnoming(tmp43, var3)	 # 
-	Digging(tmp44, 1, tmp42, tmp43)	# IR_OP_TYPE_SUM
-
-	Gnoming(tmp45, var6)	 # 
-	Digging(tmp46, 1, tmp44, tmp45)	# IR_OP_TYPE_SUM
+	Gnoming(tmp16, var0)	 # 
+	Digging(tmp17, 3, tmp15, tmp16)	# IR_OP_TYPE_MUL
 
 
-	Cherepovec(tmp46)
+	Cherepovec(tmp17)
+
+Gyat(func_4_1, 1, 1)	# 
+	Gnoming(var0, arg1)	 # Variable: 
+	Gnoming(tmp18, var0)	 # 
+	Gnoming(tmp19, 1 )
+	Digging(tmp20, 5, tmp18, tmp19)	# IR_OP_TYPE_EQ
+
+Frog(label1, tmp20)	# check IF condition, jmp to else
+	Gnoming(tmp21, 1 )
+
+	Cherepovec(tmp21)
+
+Viperr(label1)	# label else for IF
+	Gnoming(tmp22, var0)	 # 
+	Gnoming(tmp23, 0 )
+	Digging(tmp24, 5, tmp22, tmp23)	# IR_OP_TYPE_EQ
+
+Frog(label2, tmp24)	# check IF condition, jmp to else
+	Gnoming(tmp25, 0 )
+
+	Cherepovec(tmp25)
+
+Viperr(label2)	# label else for IF
+	Gnoming(tmp26, var0)	 # 
+	Gnoming(tmp27, 1 )
+	Digging(tmp28, 2, tmp26, tmp27)	# IR_OP_TYPE_SUB
+
+	Gnoming(arg1, tmp28)
+
+RingRing(tmp29, func_4_1)	# 
+
+	Gnoming(tmp30, var0)	 # 
+	Gnoming(tmp31, 2 )
+	Digging(tmp32, 2, tmp30, tmp31)	# IR_OP_TYPE_SUB
+
+	Gnoming(arg1, tmp32)
+
+RingRing(tmp33, func_4_1)	# 
+
+	Digging(tmp34, 1, tmp29, tmp33)	# IR_OP_TYPE_SUM
+
+
+	Cherepovec(tmp34)

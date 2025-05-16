@@ -7,6 +7,7 @@
 #define IR_file out
 #define NUM_SPECIFER_ "%ld"
 #include "PYAM_IR/include/libpyam_ir.h"
+#include "translation/structs.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -31,24 +32,6 @@
             return IR_TRANSLATION_ERROR_SMASH_MAP;                                                  \
         }                                                                                           \
     } while(0)
-
-typedef struct Func
-{
-    size_t num;
-    size_t count_args;
-} func_t;
-
-typedef struct Translator
-{
-    stack_key_t vars;
-    stack_key_t funcs;
-    size_t label_num;
-    size_t temp_var_num;
-    long long int var_num_base;
-    size_t arg_var_num;
-
-    smash_map_t func_arg_num;
-} translator_t;
 
 #define HASH_KEY_ 31
 static size_t func_hash_func_(const void* const string)
@@ -207,7 +190,7 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
     IR_TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
 
     IR_CALL_MAIN_(translator.temp_var_num++);
-    IR_GLOBAL_VARS_NUM_(0); //hard cock
+    IR_GLOBAL_VARS_NUM_(0ul); //hard cock
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(&translator, tree->Groot, out),     
                                 translator_dtor_(&translator);
@@ -422,7 +405,10 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_OPERATION_(translator->temp_var_num++, IR_OP_TYPE_POW, first_op, second_op);
+    //FIXME
+    IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
+        kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
+    );
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -730,7 +716,10 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
     const size_t op_res_tmp = translator->temp_var_num++;
 
     IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
-    IR_OPERATION_(op_res_tmp, IR_OP_TYPE_POW, first_op_tmp, second_op);
+    //FIXME
+    IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
+        kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
+    );
     IR_ASSIGN_VAR_(first_op, op_res_tmp, "");
 
     return IR_TRANSLATION_ERROR_SUCCESS;
@@ -1003,12 +992,6 @@ static enum IrTranslationError init_func_(translator_t* const translator, const 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
 
-//FIXME
-//FIXME
-//FIXME
-//FIXME
-//FIXME
-
 static enum IrTranslationError translate_FUNC(translator_t* const translator, const tree_elem_t* elem, FILE* out)
 {
     lassert(!is_invalid_ptr(translator), "");
@@ -1022,7 +1005,7 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     CHECK_UNDECLD_FUNC_(func);
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
 
-    IR_FUNCTION_BODY_(func.num, func.count_args, 0lu /*FIXME - count in front*/, ""); 
+    IR_FUNCTION_BODY_(func.num, func.count_args, (size_t)elem->lt->lexem.data.num, ""); 
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
@@ -1110,11 +1093,11 @@ static enum IrTranslationError translate_MAIN(translator_t* const translator, co
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(out), "");
 
-    IR_MAIN_BODY_(0ul /*FIXME - count in front*/);
+    IR_MAIN_BODY_((size_t)elem->lt->lexem.data.num);
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
-    IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
+    IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt->lt, out));
     IR_TRANSLATION_ERROR_HANDLE(clean_vars_stacks_(translator));
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));

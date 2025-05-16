@@ -26,6 +26,7 @@ typedef struct DescState
     size_t ind;
     const lexer_t lexer;
     stack_key_t errors;
+    size_t local_vars_cnt;
 } desc_state_t;
 
 #define ERROR_MSG_MAX_ 1024
@@ -73,7 +74,7 @@ enum TreeError syntaxer_ctor(tree_t* const syntaxer, const lexer_t lexer)
 
     size_ = 0;
 
-    desc_state_t desc_state = {.ind = 0, .lexer = lexer, .errors = 0};
+    desc_state_t desc_state = {.ind = 0, .lexer = lexer, .errors = 0, .local_vars_cnt = 0};
     STACK_ERROR_HANDLE_(STACK_CTOR(&desc_state.errors, ERROR_MSG_MAX_, 0));
 
     syntaxer->Groot = desc_start_(&desc_state);
@@ -272,6 +273,8 @@ tree_elem_t* desc_func_(desc_state_t* const desc_state)
     }
     SHIFT_;
 
+    desc_state->local_vars_cnt = 0;
+
     size_t old_ind = CUR_IND_;
     tree_elem_t* args = desc_vars_(desc_state);
     if (IS_FAILURE_)
@@ -290,9 +293,14 @@ tree_elem_t* desc_func_(desc_state_t* const desc_state)
     tree_elem_t* body = desc_body_(desc_state);
     CHECK_ERROR_(tree_elem_dtor_recursive_(&name);tree_elem_dtor_recursive_(&args);
                  tree_elem_dtor_recursive_(&body););
+
+    lexem_t lexem_local_vars_cnt = {
+        .type = LEXEM_TYPE_NUM, 
+        .data = {.num = desc_state->local_vars_cnt}
+    };
     
-    lexem_t lexem_please = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
-    return CREATE_ELEM_(lexem_func, CREATE_ELEM_(lexem_please, name, args), body);
+    // lexem_t lexem_please = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
+    return CREATE_ELEM_(lexem_func, CREATE_ELEM_(lexem_local_vars_cnt, name, args), body);
 }
 
 tree_elem_t* desc_main_(desc_state_t* const desc_state) 
@@ -305,10 +313,19 @@ tree_elem_t* desc_main_(desc_state_t* const desc_state)
     }
     SHIFT_;
 
+    desc_state->local_vars_cnt = 0;
+
     tree_elem_t* elem = desc_body_(desc_state);
     CHECK_ERROR_(tree_elem_dtor_recursive_(&elem););
 
-    return elem;
+    // fprintf(stderr, RED_TEXT("lexem_local_vars_cnt: %zu\n"), desc_state->local_vars_cnt);
+
+    lexem_t lexem_local_vars_cnt = {
+        .type = LEXEM_TYPE_NUM, 
+        .data = {.num = desc_state->local_vars_cnt}
+    };
+
+    return CREATE_ELEM_(lexem_local_vars_cnt, elem, NULL);
 }
 
 tree_elem_t* desc_args_(desc_state_t* const desc_state) 
@@ -340,6 +357,7 @@ tree_elem_t* desc_vars_(desc_state_t* const desc_state)
     {
         RET_FAILURE_();
     }
+    ++desc_state->local_vars_cnt;
     tree_elem_t* elem = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
     SHIFT_;
 
@@ -352,6 +370,7 @@ tree_elem_t* desc_vars_(desc_state_t* const desc_state)
         {
             RET_FAILURE_();
         }
+        ++desc_state->local_vars_cnt;
         tree_elem_t* elem2 = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
         SHIFT_;
 
@@ -763,6 +782,9 @@ tree_elem_t* desc_declaration_(desc_state_t* const desc_state)
     {
         RET_FAILURE_();
     }
+    ++desc_state->local_vars_cnt;
+    // fprintf(stderr, RED_TEXT("desc_assignment: %zu\n"), desc_state->local_vars_cnt);
+
     tree_elem_t* elem_lt = CREATE_ELEM_(CUR_LEX_, NULL, NULL);
     SHIFT_;
 
