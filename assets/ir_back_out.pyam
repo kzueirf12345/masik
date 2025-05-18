@@ -5,121 +5,114 @@ RingRing(tmp0, main)	# call main
 
 	Bobb(tmp1, hlt, 1)	# System function call: "hlt"
 
-Gyat(main, 0, 6)	# implement main
-	Gnoming(tmp2, 0 )
+Gyat(main, 0, 3)	# implement main
+	Gnoming(tmp2, 3 )
 	Gnoming(var0, tmp2)	# Variable: 
-	Gnoming(tmp3, 0 )
-	Gnoming(var1, tmp3)	# Variable: 
 
-	Bobb(tmp4, in, 0)	# System function call: "in"
-	Gnoming(var0, tmp4)	# Variable: IN arg
+	Bobb(tmp3, in, 0)	# System function call: "in"
+	Gnoming(var0, tmp3)	# Variable: IN arg
+	Gnoming(tmp4, var0)	 # 
+	Gnoming(arg1, tmp4)
 
-	Bobb(tmp5, in, 0)	# System function call: "in"
-	Gnoming(var1, tmp5)	# Variable: IN arg
+	Bobb(tmp5, out, 1)	# System function call: "out"
 	Gnoming(tmp6, var0)	 # 
-	Gnoming(arg1, tmp6)
+	Gnoming(arg2, tmp6)
 
-RingRing(tmp7, func_3_1)	# 
+RingRing(tmp7, func_2_1)	# 
 
-	Gnoming(var2, tmp7)	# Variable: 
-	Gnoming(tmp8, var2)	 # 
-	Gnoming(arg2, tmp8)
+	Gnoming(var1, tmp7)	# Variable: 
+	Gnoming(tmp8, var1)	 # 
+	Gnoming(arg1, tmp8)
 
-RingRing(tmp9, func_5_1)	# 
+	Bobb(tmp9, out, 1)	# System function call: "out"
+	Gnoming(tmp10, var0)	 # 
+	Gnoming(arg3, tmp10)
 
-	Gnoming(var3, tmp9)	# Variable: 
-	Gnoming(tmp10, var3)	 # 
-	Gnoming(arg1, tmp10)
+RingRing(tmp11, func_4_1)	# 
 
-RingRing(tmp11, func_3_1)	# 
+	Gnoming(var2, tmp11)	# Variable: 
+	Gnoming(tmp12, var2)	 # 
+	Gnoming(arg1, tmp12)
 
-	Gnoming(arg3, tmp11)
+	Bobb(tmp13, out, 1)	# System function call: "out"
+	Gnoming(tmp14, 0 )
 
-	Bobb(tmp12, out, 1)	# System function call: "out"
-	Gnoming(tmp13, 4 )
-	Gnoming(arg3, tmp13)
+	Cherepovec(tmp14)
 
-	Bobb(tmp14, out, 1)	# System function call: "out"
-	Gnoming(tmp15, 2 )
-	Gnoming(var4, tmp15)	# Variable: 
-	Gnoming(tmp16, 3 )
-	Gnoming(var5, tmp16)	# Variable: 
-	Gnoming(tmp17, var4)	 # 
-	Gnoming(tmp18, var5)	 # 
-	Gnoming(arg4, tmp18)
-	Gnoming(arg5, tmp17)
+Gyat(func_2_1, 1, 1)	# 
+	Gnoming(var0, arg2)	 # Variable: 
+	Gnoming(tmp15, var0)	 # 
+	Gnoming(tmp16, 1 )
+	Digging(tmp17, 5, tmp15, tmp16)	# IR_OP_TYPE_EQ
 
-	Bobb(tmp19, pow, 2)	# System function call: "pow"
-	Gnoming(var5, tmp19)	# Variable: 
-	Gnoming(tmp20, 0 )
+Frog(label1, tmp17)	# check IF condition, jmp after else
+Frog(label0, 1)	# jmp to else in IF
 
-	Cherepovec(tmp20)
+Viperr(label1)	# label not else in IF
+	Gnoming(tmp18, 1 )
 
-Gyat(func_3_1, 1, 1)	# 
-	Gnoming(var0, arg1)	 # Variable: 
-	Gnoming(tmp21, var0)	 # 
-	Gnoming(tmp22, 1 )
-	Digging(tmp23, 5, tmp21, tmp22)	# IR_OP_TYPE_EQ
+	Cherepovec(tmp18)
 
-Frog(label0, tmp23)	# check IF condition, jmp to else
-	Gnoming(tmp24, 1 )
+Viperr(label0)	# label else for IF
+	Gnoming(tmp19, var0)	 # 
+	Gnoming(tmp20, 1 )
+	Digging(tmp21, 2, tmp19, tmp20)	# IR_OP_TYPE_SUB
+
+	Gnoming(arg2, tmp21)
+
+RingRing(tmp22, func_2_1)	# 
+
+	Gnoming(tmp23, var0)	 # 
+	Digging(tmp24, 3, tmp22, tmp23)	# IR_OP_TYPE_MUL
+
 
 	Cherepovec(tmp24)
 
-Viperr(label0)	# label else for IF
+Gyat(func_4_1, 1, 1)	# 
+	Gnoming(var0, arg3)	 # Variable: 
 	Gnoming(tmp25, var0)	 # 
 	Gnoming(tmp26, 1 )
-	Digging(tmp27, 2, tmp25, tmp26)	# IR_OP_TYPE_SUB
+	Digging(tmp27, 5, tmp25, tmp26)	# IR_OP_TYPE_EQ
 
-	Gnoming(arg1, tmp27)
+Frog(label3, tmp27)	# check IF condition, jmp after else
+Frog(label2, 1)	# jmp to else in IF
 
-RingRing(tmp28, func_3_1)	# 
+Viperr(label3)	# label not else in IF
+	Gnoming(tmp28, 1 )
 
-	Gnoming(tmp29, var0)	 # 
-	Digging(tmp30, 3, tmp28, tmp29)	# IR_OP_TYPE_MUL
-
-
-	Cherepovec(tmp30)
-
-Gyat(func_5_1, 1, 1)	# 
-	Gnoming(var0, arg2)	 # Variable: 
-	Gnoming(tmp31, var0)	 # 
-	Gnoming(tmp32, 1 )
-	Digging(tmp33, 5, tmp31, tmp32)	# IR_OP_TYPE_EQ
-
-Frog(label1, tmp33)	# check IF condition, jmp to else
-	Gnoming(tmp34, 1 )
-
-	Cherepovec(tmp34)
-
-Viperr(label1)	# label else for IF
-	Gnoming(tmp35, var0)	 # 
-	Gnoming(tmp36, 0 )
-	Digging(tmp37, 5, tmp35, tmp36)	# IR_OP_TYPE_EQ
-
-Frog(label2, tmp37)	# check IF condition, jmp to else
-	Gnoming(tmp38, 0 )
-
-	Cherepovec(tmp38)
+	Cherepovec(tmp28)
 
 Viperr(label2)	# label else for IF
-	Gnoming(tmp39, var0)	 # 
-	Gnoming(tmp40, 1 )
-	Digging(tmp41, 2, tmp39, tmp40)	# IR_OP_TYPE_SUB
+	Gnoming(tmp29, var0)	 # 
+	Gnoming(tmp30, 0 )
+	Digging(tmp31, 5, tmp29, tmp30)	# IR_OP_TYPE_EQ
 
-	Gnoming(arg2, tmp41)
+Frog(label5, tmp31)	# check IF condition, jmp after else
+Frog(label4, 1)	# jmp to else in IF
 
-RingRing(tmp42, func_5_1)	# 
+Viperr(label5)	# label not else in IF
+	Gnoming(tmp32, 0 )
 
-	Gnoming(tmp43, var0)	 # 
-	Gnoming(tmp44, 2 )
-	Digging(tmp45, 2, tmp43, tmp44)	# IR_OP_TYPE_SUB
+	Cherepovec(tmp32)
 
-	Gnoming(arg2, tmp45)
+Viperr(label4)	# label else for IF
+	Gnoming(tmp33, var0)	 # 
+	Gnoming(tmp34, 1 )
+	Digging(tmp35, 2, tmp33, tmp34)	# IR_OP_TYPE_SUB
 
-RingRing(tmp46, func_5_1)	# 
+	Gnoming(arg3, tmp35)
 
-	Digging(tmp47, 1, tmp42, tmp46)	# IR_OP_TYPE_SUM
+RingRing(tmp36, func_4_1)	# 
+
+	Gnoming(tmp37, var0)	 # 
+	Gnoming(tmp38, 2 )
+	Digging(tmp39, 2, tmp37, tmp38)	# IR_OP_TYPE_SUB
+
+	Gnoming(arg3, tmp39)
+
+RingRing(tmp40, func_4_1)	# 
+
+	Digging(tmp41, 1, tmp36, tmp40)	# IR_OP_TYPE_SUM
 
 
-	Cherepovec(tmp47)
+	Cherepovec(tmp41)

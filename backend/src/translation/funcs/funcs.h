@@ -4,11 +4,12 @@
 #include <stdio.h>
 
 #include "utils/src/tree/structs.h"
-#include "translation/verification/verification.h"
+#include "../verification/verification.h"
+#include "hash_table/libs/list_on_array/libfist.h"
 
-enum TranslationError translate_splu(const tree_t* const tree, FILE* out);
+enum TranslationError translate_splu(const fist_t* const fist, FILE* out);
 
-enum TranslationError translate_nasm(const tree_t* const tree, FILE* out);
+// enum TranslationError translate_nasm(const tree_t* const tree, FILE* out);
 
 
 #endif /* MASIK_BACKEND_SRC_TRANSLATION_FUNCS_FUNCS_H */

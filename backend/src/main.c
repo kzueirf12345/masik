@@ -6,6 +6,8 @@
 #include "flags/flags.h"
 #include "utils/utils.h"
 #include "translation/funcs/funcs.h"
+#include "ir_fist/funcs/funcs.h"
+#include "ir_fist/structs.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -22,21 +24,35 @@ int main(const int argc, char* const argv[])
         return EXIT_FAILURE;
     }
 
-    tree_t tree = {};
-    TREE_ERROR_HANDLE(tree_ctor(&tree, flags_objs.in_filename),
+    // tree_t tree = {};
+    // TREE_ERROR_HANDLE(tree_ctor(&tree, flags_objs.in_filename),
+    //                                                                           dtor_all(&flags_objs);
+    // );
+
+    // TRANSLATION_ERROR_HANDLE(translate_splu(&tree, flags_objs.splu_out),
+    //                                                          dtor_all(&flags_objs);tree_dtor(&tree);
+    // );
+
+    // TRANSLATION_ERROR_HANDLE(translate_nasm(&tree, flags_objs.nasm_out),
+    //                                                          dtor_all(&flags_objs);tree_dtor(&tree);
+    // );
+
+
+    // tree_dtor(&tree);
+
+    fist_t fist = {};
+    FIST_ERROR_HANDLE(FIST_CTOR(&fist, sizeof(ir_block_t), 10),
                                                                               dtor_all(&flags_objs);
     );
-
-    TRANSLATION_ERROR_HANDLE(translate_splu(&tree, flags_objs.splu_out),
-                                                             dtor_all(&flags_objs);tree_dtor(&tree);
+    IR_FIST_ERROR_HANDLE(ir_fist_ctor(&fist, flags_objs.in_filename),
+                                                             dtor_all(&flags_objs);fist_dtor(&fist);
     );
 
-    TRANSLATION_ERROR_HANDLE(translate_nasm(&tree, flags_objs.nasm_out),
-                                                             dtor_all(&flags_objs);tree_dtor(&tree);
+    TRANSLATION_ERROR_HANDLE(translate_splu(&fist, flags_objs.splu_out),
+                                                             dtor_all(&flags_objs);fist_dtor(&fist);
     );
 
-
-    tree_dtor(&tree);
+    fist_dtor(&fist);
     
     if (dtor_all(&flags_objs))
     {
@@ -107,6 +123,8 @@ int logger_init(char* const log_folder)
 
     TREE_DUMB_ERROR_HANDLE(tree_dumb_ctor());
     TREE_DUMB_ERROR_HANDLE(tree_dumb_set_out_file(dumb_filename));
+
+    FIST_DUMB_ERROR_HANDLE(fist_dumb_ctor());
     
     return EXIT_SUCCESS;
 }

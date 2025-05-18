@@ -584,8 +584,11 @@ static enum IrTranslationError translate_IF(translator_t* const translator, cons
     const size_t cond_res = translator->temp_var_num - 1;
 
     size_t label_else = USE_LABEL_();
+    size_t label_help = USE_LABEL_();
 
-    IR_COND_JMP_(label_else, cond_res, "check IF condition, jmp to else");
+    IR_COND_JMP_(label_help, cond_res, "check IF condition, jmp after else");
+    IR_JMP_(label_else, "jmp to else in IF");
+    IR_LABEL_(label_help, "label not else in IF");
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
@@ -688,13 +691,14 @@ static enum IrTranslationError translate_WHILE(translator_t* const translator, c
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
         const size_t cond_res = translator->temp_var_num - 1;
-        label_else = USE_LABEL_();
-
-        IR_COND_JMP_(label_else, cond_res, "first check WHILE condition, jmp to else");
 
         label_body = USE_LABEL_();
 
-        IR_JMP_(label_body, "jump to body WHILE");
+        IR_COND_JMP_(label_body, cond_res, "first check WHILE condition, jump to body WHILE");
+
+        label_else = USE_LABEL_();
+
+        IR_JMP_(label_else, "jmp to else WHILE");
     }
 
     label_condition = USE_LABEL_();
@@ -703,9 +707,12 @@ static enum IrTranslationError translate_WHILE(translator_t* const translator, c
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
 
     const size_t cond_res = translator->temp_var_num - 1;
+
     label_end = USE_LABEL_();
 
-    IR_COND_JMP_(label_end, cond_res, "second check WHILE condition, jmp to end");
+    IR_COND_JMP_(label_body, cond_res, "second check WHILE condition, jmp to body");
+
+    IR_JMP_(label_end,  "jmp to end");
 
     IR_LABEL_(label_body, "start body WHILE");
 
@@ -1069,27 +1076,54 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
 
+    // const tree_elem_t* arg = elem->lt->rt;
+    // for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
+    // {
+    //     CHECK_UNDECLD_VAR_(arg->rt);
+    //     STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->rt->lexem.data.var));
+
+    //     const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
+    //     const size_t second_op = start_arg_num + count - 1;
+
+    //     IR_TAKE_ARG_(first_op, second_op, "");
+    // }
+    // if (func.count_args != 0)
+    // {
+    //     CHECK_UNDECLD_VAR_(arg);
+    //     STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
+
+    //     const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
+    //     const size_t second_op = start_arg_num + func.count_args - 1;
+        
+    //     IR_TAKE_ARG_(first_op, second_op, "");
+    // }
+
+    const tree_elem_t** arr_vars = calloc(func.count_args, sizeof(*arr_vars));
+
     const tree_elem_t* arg = elem->lt->rt;
     for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
     {
-        CHECK_UNDECLD_VAR_(arg->rt);
-        STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->rt->lexem.data.var));
-
-        const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
-        const size_t second_op = start_arg_num + func.count_args - count;
-
-        IR_TAKE_ARG_(first_op, second_op, "");
+        arr_vars[count - 1] = arg->rt;
     }
     if (func.count_args != 0)
     {
+        arr_vars[func.count_args - 1] = arg;
+    }
+
+    for (size_t var_ind = 0; var_ind < func.count_args; ++var_ind)
+    {
+        arg = arr_vars[func.count_args - var_ind - 1];
         CHECK_UNDECLD_VAR_(arg);
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
 
         const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
-        const size_t second_op = start_arg_num;
-        
+        const size_t second_op = start_arg_num + var_ind;
+
         IR_TAKE_ARG_(first_op, second_op, "");
     }
+
+    free(arr_vars);
+
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->rt, out));
 
@@ -1108,25 +1142,50 @@ static enum IrTranslationError translate_FUNC_LBRAKET(translator_t* const transl
     size_t start_arg_num = 0;
     IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem, &func, &start_arg_num));
 
+    // const tree_elem_t* arg = elem->rt;
+    // for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
+    // {
+    //     const size_t first_op = start_arg_num + func.count_args - count;
+
+    //     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg->rt, out));
+    //     const size_t second_op = translator->temp_var_num - 1;
+
+    //     IR_GIVE_ARG_(first_op, second_op);
+    // }
+    // if (func.count_args != 0)
+    // {
+    //     const size_t first_op = start_arg_num;
+
+    //     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
+    //     const size_t second_op = translator->temp_var_num - 1;
+
+    //     IR_GIVE_ARG_(first_op, second_op);
+    // }
+
+    const tree_elem_t** arr_vars = calloc(func.count_args, sizeof(*arr_vars));
+
     const tree_elem_t* arg = elem->rt;
     for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
     {
-        const size_t first_op = start_arg_num + func.count_args - count;
-
-        IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg->rt, out));
-        const size_t second_op = translator->temp_var_num - 1;
-
-        IR_GIVE_ARG_(first_op, second_op);
+        arr_vars[count - 1] = arg->rt;
     }
     if (func.count_args != 0)
     {
-        const size_t first_op = start_arg_num;
+        arr_vars[func.count_args - 1] = arg;
+    }
 
+    for (size_t var_ind = 0; var_ind < func.count_args; ++var_ind)
+    {
+        const size_t first_op = start_arg_num + var_ind;
+
+        arg = arr_vars[func.count_args - var_ind - 1];
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
         const size_t second_op = translator->temp_var_num - 1;
 
         IR_GIVE_ARG_(first_op, second_op);
     }
+
+    free(arr_vars);
 
     IR_CALL_FUNC_(translator->temp_var_num++, func.num, func.count_args, "");
 
