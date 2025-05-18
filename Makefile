@@ -72,8 +72,8 @@ nasm_rebuild: nasm_clean nasm_build
 nasm_start: nasm_build
 	./$(ASM_FILENAME).out
 
-nasm_build: ./assets/$(ASM_FILENAME).nasm | ./$(BUILD_DIR)/
-	$(ASM_COMPILER) -f $(SYSTEM) -l ./$(BUILD_DIR)/$(ASM_FILENAME).lst -o ./$(BUILD_DIR)/$(ASM_FILENAME).o ./assets/$(ASM_FILENAME).nasm ;
+nasm_build: ./assets/$(ASM_FILENAME).asm | ./$(BUILD_DIR)/
+	$(ASM_COMPILER) -f $(SYSTEM) -l ./$(BUILD_DIR)/$(ASM_FILENAME).lst -o ./$(BUILD_DIR)/$(ASM_FILENAME).o ./assets/$(ASM_FILENAME).asm ;
 	$(ASM_LINKER) ./$(BUILD_DIR)/$(ASM_FILENAME).o -o  $(ASM_FILENAME).out
 
 nasm_clean:

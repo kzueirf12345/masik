@@ -9,7 +9,7 @@
 
 enum TranslationError translate_splu(const fist_t* const fist, FILE* out);
 
-// enum TranslationError translate_nasm(const tree_t* const tree, FILE* out);
+enum TranslationError translate_nasm(const fist_t* const fist, FILE* out);
 
 
 #endif /* MASIK_BACKEND_SRC_TRANSLATION_FUNCS_FUNCS_H */

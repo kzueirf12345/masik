@@ -42,7 +42,7 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
         return FLAGS_ERROR_SUCCESS;
     }
 
-    if (!strncpy(flags_objs->nasm_filename, "../assets/masik_nasm.nasm", FILENAME_MAX))
+    if (!strncpy(flags_objs->nasm_filename, "../assets/masik_nasm.asm", FILENAME_MAX))
     {
         perror("Can't strncpy flags_objs->in_filename");
         return FLAGS_ERROR_SUCCESS;
