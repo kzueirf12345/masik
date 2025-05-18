@@ -1,6 +1,7 @@
 section .data
 HexTable db "0123456789ABCDEF"
-
+InputBufferSize equ 32
+InputBuffer: times InputBufferSize db 0
 section .text
 global _start
 
@@ -20,19 +21,33 @@ mov rsp, rbp
 sub rsp, 24 ; rsp = rbp - local_vars_cnt
 push rax ; ret val
 push rbx ; old rbp
-push 10
+push 0
+pop qword [rbp-8]
+call in
+push rax ; ret val
+add rsp, 0
 pop qword [rbp-8]
 push qword [rbp-8]
 call out
 add rsp, 8
+push 0
 push qword [rbp-8]
+pop rcx
+pop rbx
+sub rbx, rcx
+push rbx
 call func_2_1
 push rax
 pop qword [rbp-16]
 push qword [rbp-16]
 call out
 add rsp, 8
+push 0
 push qword [rbp-8]
+pop rcx
+pop rbx
+sub rbx, rcx
+push rbx
 call func_4_1
 push rax
 pop qword [rbp-24]
@@ -205,11 +220,65 @@ mov rdi, [rsp + 8]
 mov rax, 60
 syscall
 
+;;; ---------------------------------------------
+;;; Descript:   read num
+;;; Entry:      NONE
+;;; Exit:       rax = read num (0 if error)
+;;; Destroy:    rcx, rdx, rsi, rdi, r11
+;;; ---------------------------------------------
 in:
-push 22866613
-call hlt
-add rsp, 8
-ret
+    mov rsi, InputBuffer                       ; rsi - buffer addr
+    mov rdx, InputBufferSize                   ; rdx - buffer size
+    mov r10, 10                                ; r10 - base
+
+    xor rax, rax                               ; sys_read
+    xor rdi, rdi                               ; stdin
+    syscall
+
+    test rax, rax                              ; check read result
+    jle .ExitError
+
+    mov rcx, rax                               ; rcx - cnt bytes read
+    dec rcx                                    ; not handle \n
+    xor rax, rax                               ; rax - result num
+    xor rdi, rdi                               ; rdi - sign flag (0 = positive)
+
+;;; check first symbol
+    mov bl, byte [rsi]
+    cmp bl, '-'
+    jne .CheckDigit
+    inc rdi                                    ; set negative flag
+    inc rsi                                    ; skip '-'
+    dec rcx
+    jz .ExitError                              ; only '-' in input
+
+.CheckDigit:
+    mov bl, byte [rsi]
+    sub bl, '0'
+    cmp bl, 9
+    ja .ExitError                                  ; not a digit
+
+.ConvertLoop:
+    mov bl, byte [rsi]
+    sub bl, '0'                                ; convert to digit
+    imul rax, r10                              ; rax *= 10
+    add rax, rbx                               ; rax += digit
+
+    inc rsi                                    ; next char
+    dec rcx
+    jnz .ConvertLoop
+
+;;; apply sign if needed
+    test rdi, rdi
+    jz .ExitSuccess
+    neg rax
+
+.ExitSuccess:
+    ret
+
+.ExitError:
+    xor rax, rax                               ; return 0 if error
+    ret
 
 ;;; ---------------------------------------------
 ;;; Descript:   print num
