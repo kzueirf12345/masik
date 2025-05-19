@@ -20,7 +20,6 @@ typedef struct Translator
     size_t label_num;
     size_t temp_var_num;
     long long int var_num_base;
-    size_t arg_var_num;
 
     smash_map_t func_arg_num;
 } translator_t;

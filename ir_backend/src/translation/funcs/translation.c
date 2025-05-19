@@ -130,7 +130,6 @@ static enum IrTranslationError translator_ctor_(translator_t* const translator)
     translator->label_num = 0;
     translator->temp_var_num = 0;
     translator->var_num_base = 0;
-    translator->arg_var_num = 0;
 
     return IR_TRANSLATION_ERROR_SUCCESS;
 }
@@ -164,7 +163,6 @@ static void translator_dtor_(translator_t* const translator)
     IF_DEBUG(translator->label_num = 0;)
     IF_DEBUG(translator->temp_var_num = 0;)
     IF_DEBUG(translator->var_num_base = 0;)
-    IF_DEBUG(translator->arg_var_num = 0;)
 }
 
 
@@ -194,8 +192,7 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
     IR_GLOBAL_VARS_NUM_(0ul); //hard cock
     IR_CALL_MAIN_(ret_main_tmp);
 
-    IR_GIVE_ARG_(translator.arg_var_num, ret_main_tmp);
-    translator.arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].NumberOfArguments;
+    IR_GIVE_ARG_(0, ret_main_tmp);
     IR_SYSCALL_(translator.temp_var_num++, 
         kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].NumberOfArguments
@@ -411,22 +408,15 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
         .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
     };
 
-    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
-    size_t start_arg_num = translator->arg_var_num;
-
-    if (!start_arg_num_ptr)
+    if (!smash_map_get_val(&translator->func_arg_num, &func))
     {
+        size_t temp = 0;
         SMASH_MAP_ERROR_HANDLE_(
             smash_map_insert(
                 &translator->func_arg_num, 
-                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+                (smash_map_elem_t){.key = &func, .val = &temp}
             )
         );
-        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments;
-    }
-    else
-    {
-        start_arg_num = *start_arg_num_ptr;
     }
 
     IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, elem->lt, out));
@@ -437,8 +427,8 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_GIVE_ARG_(start_arg_num    , first_op);
-    IR_GIVE_ARG_(start_arg_num + 1, second_op);
+    IR_GIVE_ARG_(0, first_op);
+    IR_GIVE_ARG_(1, second_op);
 
     IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
@@ -751,22 +741,15 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
         .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
     };
 
-    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
-    size_t start_arg_num = translator->arg_var_num;
-
-    if (!start_arg_num_ptr)
+    if (!smash_map_get_val(&translator->func_arg_num, &func))
     {
+        size_t temp = 0;
         SMASH_MAP_ERROR_HANDLE_(
             smash_map_insert(
                 &translator->func_arg_num, 
-                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+                (smash_map_elem_t){.key = &func, .val = &temp}
             )
         );
-        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments;
-    }
-    else
-    {
-        start_arg_num = *start_arg_num_ptr;
     }
 
     long long int first_op = 0;
@@ -781,8 +764,8 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
 
     IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
 
-    IR_GIVE_ARG_(start_arg_num    , first_op_tmp);
-    IR_GIVE_ARG_(start_arg_num + 1, second_op);
+    IR_GIVE_ARG_(0, first_op_tmp);
+    IR_GIVE_ARG_(1, second_op);
 
     IR_SYSCALL_(op_res_tmp, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
@@ -1022,12 +1005,11 @@ static enum IrTranslationError translate_ELSE(translator_t* const translator, co
 }
 
 static enum IrTranslationError init_func_(translator_t* const translator, const tree_elem_t* tree_ptr,
-                                          func_t* const func, size_t* const start_arg_num)
+                                          func_t* const func)
 {
     lassert(!is_invalid_ptr(func), "");
     lassert(!is_invalid_ptr(tree_ptr), "");
     lassert(!is_invalid_ptr(translator), "");
-    lassert(!is_invalid_ptr(start_arg_num), "");
 
     func->num        = tree_ptr->lt->lexem.data.var;
     func->count_args = (tree_ptr->rt != NULL);
@@ -1038,22 +1020,15 @@ static enum IrTranslationError init_func_(translator_t* const translator, const 
                           && tree_ptr->lexem.data.op == OP_TYPE_ARGS_COMMA);
     }
 
-    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, func);
-
-    if (!start_arg_num_ptr)
+    if (!smash_map_get_val(&translator->func_arg_num, func))
     {
+        size_t temp = 0;
         SMASH_MAP_ERROR_HANDLE_(
             smash_map_insert(
                 &translator->func_arg_num, 
-                (smash_map_elem_t){.key = func, .val = &translator->arg_var_num}
+                (smash_map_elem_t){.key = func, .val = &temp}
             )
         );
-        *start_arg_num = translator->arg_var_num;
-        translator->arg_var_num += func->count_args;
-    }
-    else
-    {
-        *start_arg_num = *start_arg_num_ptr;
     }
 
     return IR_TRANSLATION_ERROR_SUCCESS;
@@ -1066,8 +1041,7 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     lassert(!is_invalid_ptr(out), "");
 
     func_t func = {};
-    size_t start_arg_num = 0;
-    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem->lt, &func, &start_arg_num));
+    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem->lt, &func));
 
     CHECK_UNDECLD_FUNC_(func);
     STACK_ERROR_HANDLE_(stack_push(&translator->funcs, &func));
@@ -1075,28 +1049,6 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
     IR_FUNCTION_BODY_(func.num, func.count_args, (size_t)elem->lt->lexem.data.num, ""); 
 
     IR_TRANSLATION_ERROR_HANDLE(create_new_var_frame_(translator));
-
-    // const tree_elem_t* arg = elem->lt->rt;
-    // for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
-    // {
-    //     CHECK_UNDECLD_VAR_(arg->rt);
-    //     STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->rt->lexem.data.var));
-
-    //     const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
-    //     const size_t second_op = start_arg_num + count - 1;
-
-    //     IR_TAKE_ARG_(first_op, second_op, "");
-    // }
-    // if (func.count_args != 0)
-    // {
-    //     CHECK_UNDECLD_VAR_(arg);
-    //     STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
-
-    //     const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
-    //     const size_t second_op = start_arg_num + func.count_args - 1;
-        
-    //     IR_TAKE_ARG_(first_op, second_op, "");
-    // }
 
     const tree_elem_t** arr_vars = calloc(func.count_args, sizeof(*arr_vars));
 
@@ -1117,7 +1069,7 @@ static enum IrTranslationError translate_FUNC(translator_t* const translator, co
         STACK_ERROR_HANDLE_(stack_push(CUR_VAR_STACK_, &arg->lexem.data.var));
 
         const long long int first_op = translator->var_num_base + (long long int)(CUR_VAR_STACK_SIZE_ - 1);
-        const size_t second_op = start_arg_num + var_ind;
+        const size_t second_op = var_ind;
 
         IR_TAKE_ARG_(first_op, second_op, "");
     }
@@ -1139,8 +1091,7 @@ static enum IrTranslationError translate_FUNC_LBRAKET(translator_t* const transl
     lassert(!is_invalid_ptr(out), "");
 
     func_t func = {};
-    size_t start_arg_num = 0;
-    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem, &func, &start_arg_num));
+    IR_TRANSLATION_ERROR_HANDLE(init_func_(translator, elem, &func));
 
     // const tree_elem_t* arg = elem->rt;
     // for (size_t count = 1; count < func.count_args; ++count, arg = arg->lt)
@@ -1176,7 +1127,7 @@ static enum IrTranslationError translate_FUNC_LBRAKET(translator_t* const transl
 
     for (size_t var_ind = 0; var_ind < func.count_args; ++var_ind)
     {
-        const size_t first_op = start_arg_num + var_ind;
+        const size_t first_op = var_ind;
 
         arg = arr_vars[func.count_args - var_ind - 1];
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
@@ -1343,22 +1294,15 @@ static enum IrTranslationError translate_OUT(translator_t* const translator, con
         .count_args = (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].NumberOfArguments
     };
 
-    size_t* start_arg_num_ptr = smash_map_get_val(&translator->func_arg_num, &func);
-    size_t start_arg_num = translator->arg_var_num;
-
-    if (!start_arg_num_ptr)
+    if (!smash_map_get_val(&translator->func_arg_num, &func))
     {
+        size_t temp = 0;
         SMASH_MAP_ERROR_HANDLE_(
             smash_map_insert(
                 &translator->func_arg_num, 
-                (smash_map_elem_t){.key = &func, .val = &translator->arg_var_num}
+                (smash_map_elem_t){.key = &func, .val = &temp}
             )
         );
-        translator->arg_var_num += (size_t)kIR_SYS_CALL_ARRAY[SYSCALL_OUT_INDEX].NumberOfArguments;
-    }
-    else
-    {
-        start_arg_num = *start_arg_num_ptr;
     }
 
     size_t count_args = (elem->lt != NULL);
@@ -1387,7 +1331,7 @@ static enum IrTranslationError translate_OUT(translator_t* const translator, con
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
         size_t argument = translator->temp_var_num - 1;
 
-        IR_GIVE_ARG_(start_arg_num, argument);
+        IR_GIVE_ARG_(0, argument);
 
         IR_SYSCALL_(
             translator->temp_var_num++, 

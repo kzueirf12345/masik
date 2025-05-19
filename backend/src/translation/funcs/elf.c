@@ -1,41 +1,67 @@
+#include <unistd.h>
+
 #include "utils/utils.h"
 #include "stack_on_array/libstack.h"
 #include "funcs.h"
 #include "ir_fist/funcs/funcs.h"
 #include "ir_fist/structs.h"
+#include "translation/structs.h"
 
-static enum TranslationError translate_syscall_hlt(FILE* out);
-static enum TranslationError translate_syscall_in(FILE* out);
-static enum TranslationError translate_syscall_out(FILE* out);
-static enum TranslationError translate_syscall_pow(FILE* out);
+#define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
+    do {                                                                                            \
+        const enum StackError stack_error_handler = call_func;                                      \
+        if (stack_error_handler)                                                                    \
+        {                                                                                           \
+            fprintf(stderr, "Can't " #call_func". Stack error: %s\n",                               \
+                            stack_strerror(stack_error_handler));                                   \
+            __VA_ARGS__                                                                             \
+            return TRANSLATION_ERROR_STACK;                                                         \
+        }                                                                                           \
+    } while(0)
+
+static enum TranslationError translate_syscall_hlt(stack_key_t code, FILE* out);
+static enum TranslationError translate_syscall_in(stack_key_t code, FILE* out);
+static enum TranslationError translate_syscall_out(stack_key_t code, FILE* out);
+static enum TranslationError translate_syscall_pow(stack_key_t code, FILE* out);
 
 #define CUR_BLOCK_ ((const ir_block_t*)fist->data + elem_ind)
 
+#define WRITE_BYTE_(byte_)                                                                          \
+    do {                                                                                            \
+        const uint8_t byte = byte_;                                                                 \
+        STACK_ERROR_HANDLE_(stack_push(&code, &byte));                                              \
+    } while (0)
+
 #define IR_OP_BLOCK_HANDLE(num_, name_, ...)                                                        \
-        static enum TranslationError translate_##name_(const ir_block_t* const block, FILE* out);
+        static enum TranslationError translate_##name_(stack_key_t code,                         \ 
+                                                       const ir_block_t* const block, FILE* out);
 
 #include "PYAM_IR/include/codegen.h"
 
 #undef IR_OP_BLOCK_HANDLE
 
 #define IR_OP_BLOCK_HANDLE(num_, name_, ...)                                                        \
-        case num_: TRANSLATION_ERROR_HANDLE(translate_##name_(CUR_BLOCK_, out)); break;
+        case num_: TRANSLATION_ERROR_HANDLE(translate_##name_(code, CUR_BLOCK_, out)); break;
 
-enum TranslationError translate_nasm(const fist_t* const fist, FILE* out)
+enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
 {
     FIST_VERIFY_ASSERT(fist, NULL);
     lassert(!is_invalid_ptr(out), "");
 
-    fprintf(out, 
-        "section .data\n"
-        "HexTable db \"0123456789ABCDEF\"\n"
-        "InputBufferSize equ 32\n"
-        "InputBuffer: times InputBufferSize db 0\n"
-        "section .text\n"
-        "global _start\n\n"
-    );
+    stack_key_t code = 0;
+    STACK_ERROR_HANDLE_(STACK_CTOR(&code, sizeof(uint8_t), 100));
 
-    fprintf(out, "_start:\n");
+    for (uint8_t num = 0; num <= 0x0F; ++num)
+    {
+        WRITE_BYTE_(num);
+    }
+
+    const uint8_t input_buffer_size = 32;
+    WRITE_BYTE_(input_buffer_size);
+    for (uint8_t ind = 0; ind < input_buffer_size; ++ind)
+    {
+        WRITE_BYTE_(0);
+    }
 
     for (size_t elem_ind = fist->next[0]; elem_ind; elem_ind = fist->next[elem_ind])
     {
@@ -50,16 +76,63 @@ enum TranslationError translate_nasm(const fist_t* const fist, FILE* out)
         }
     }
 
-    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_in(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_out(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_pow(out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt(code, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_in(code, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_out(code, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_pow(code, out));
+
+
+    const size_t add_offset = 0x10;
+    const size_t entry_addr = 0x400000;
+    const size_t start_data_addr = 0x410000;
+
+    elf_header_t elf_header =
+    {
+        .e_ident = {0x7F, 'E', 'L', 'F', 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0}, // magic
+        .e_type = 2,                                                          // exec
+        .e_mashine = 0x3E,                                                    // AMD x86-64
+        .e_version = 1,
+        .e_entry = {.field64 = entry_addr},                                   // why not
+        .e_phoff = {.field64 = sizeof(elf_header_t) + add_offset},            // for separate headers                        
+        .e_shoff = {.field64 = 0},
+        .e_flags = 0,
+        .e_ehsize = sizeof(elf_header_t),
+        .e_phentsize = sizeof(elf_prog_header_t),
+        .e_phnum = 2,
+        .e_shentsize = 64,
+        .e_shnum = 0,
+        .e_shstrndx = 0
+    }; 
+
+    elf_prog_header_t elf_prog_header_text =
+    {
+        .p_type = 1,                                                         // PT_LOAD
+        .p_flags64 = 0x5,                                                    // R-X
+        .p_offset = {.field64 = elf_header.e_phoff.field64 + 2*sizeof(elf_prog_header_t) + add_offset}, //TODO
+        .p_vaddr = {.field64 = entry_addr},
+        .p_paddr = {.field64 = entry_addr},
+        .p_filesz = 0,                                                      // TODO change after
+        .p_memsz = 0,                                                       // TODO change after
+        .p_align = sysconf(_SC_PAGESIZE),                                   // because on linux >= pagesize
+    };
+
+    elf_prog_header_t elf_prog_header_data =
+    {
+        .p_type = 1,                                                         // PT_LOAD
+        .p_flags64 = 0x6,                                                    // RW-
+        .p_offset = {.field64 = elf_header.e_phoff.field64 + sizeof(elf_prog_header_t) + add_offset}, //TODO
+        .p_vaddr = {.field64 = start_data_addr},
+        .p_paddr = {.field64 = start_data_addr},
+        .p_filesz = 0,                                                      // TODO change after
+        .p_memsz = 0,                                                       // TODO change after
+        .p_align = sysconf(_SC_PAGESIZE),                                   // because on linux >= pagesize
+    };
 
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_CALL_FUNCTION(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_CALL_FUNCTION(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -70,7 +143,7 @@ static enum TranslationError translate_CALL_FUNCTION(const ir_block_t* const blo
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_FUNCTION_BODY(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_FUNCTION_BODY(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -92,7 +165,7 @@ static enum TranslationError translate_FUNCTION_BODY(const ir_block_t* const blo
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_COND_JUMP(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_COND_JUMP(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -112,7 +185,7 @@ static enum TranslationError translate_COND_JUMP(const ir_block_t* const block, 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_ASSIGNMENT(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_ASSIGNMENT(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -132,7 +205,7 @@ static enum TranslationError translate_ASSIGNMENT(const ir_block_t* const block,
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_OPERATION(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_OPERATION(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -264,7 +337,7 @@ static enum TranslationError translate_OPERATION(const ir_block_t* const block, 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_RETURN(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_RETURN(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -282,7 +355,7 @@ static enum TranslationError translate_RETURN(const ir_block_t* const block, FIL
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_LABEL(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_LABEL(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -292,7 +365,7 @@ static enum TranslationError translate_LABEL(const ir_block_t* const block, FILE
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_SYSCALL(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_SYSCALL(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -309,7 +382,7 @@ static enum TranslationError translate_SYSCALL(const ir_block_t* const block, FI
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_GLOBAL_VARS(const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_GLOBAL_VARS(stack_key_t code, const ir_block_t* const block, FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -317,7 +390,7 @@ static enum TranslationError translate_GLOBAL_VARS(const ir_block_t* const block
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_hlt(FILE* out)
+static enum TranslationError translate_syscall_hlt(stack_key_t code, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -331,7 +404,7 @@ static enum TranslationError translate_syscall_hlt(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_in(FILE* out)
+static enum TranslationError translate_syscall_in(stack_key_t code, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -400,7 +473,7 @@ static enum TranslationError translate_syscall_in(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_out(FILE* out)
+static enum TranslationError translate_syscall_out(stack_key_t code, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -476,7 +549,7 @@ static enum TranslationError translate_syscall_out(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_pow(FILE* out)
+static enum TranslationError translate_syscall_pow(stack_key_t code, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 

@@ -51,7 +51,7 @@ BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 SOURCES = main.c flags/flags.c translation/verification/verification.c \
 		  translation/funcs/splu.c translation/funcs/nasm.c ir_fist/funcs/funcs.c \
-		  ir_fist/verification/verification.c
+		  ir_fist/verification/verification.c translation/funcs/elf.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
