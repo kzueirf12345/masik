@@ -6,6 +6,7 @@
 #include "ir_fist/funcs/funcs.h"
 #include "ir_fist/structs.h"
 #include "translation/structs.h"
+#include "elf_map_utils.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -19,72 +20,114 @@
         }                                                                                           \
     } while(0)
 
-static enum TranslationError translate_syscall_hlt(stack_key_t code, FILE* out);
-static enum TranslationError translate_syscall_in(stack_key_t code, FILE* out);
-static enum TranslationError translate_syscall_out(stack_key_t code, FILE* out);
-static enum TranslationError translate_syscall_pow(stack_key_t code, FILE* out);
 
-#define CUR_BLOCK_ ((const ir_block_t*)fist->data + elem_ind)
+#define STACK_CODE_BEGIN_CAPACITY_ 256
+#define SMASH_MAP_SIZE_ 101
+static enum TranslationError translator_ctor_(elf_translator_t* const translator)
+{
+    lassert(!is_invalid_ptr(translator), "");
 
-#define WRITE_BYTE_(byte_)                                                                          \
-    do {                                                                                            \
-        const uint8_t byte = byte_;                                                                 \
-        STACK_ERROR_HANDLE_(stack_push(&code, &byte));                                              \
-    } while (0)
+    SMASH_MAP_ERROR_HANDLE_(
+        SMASH_MAP_CTOR(
+            &translator->labels, 
+            SMASH_MAP_SIZE_, 
+            sizeof(label_t), 
+            sizeof(labels_val_t), 
+            func_hash_func_,
+            map_key_to_str_,
+            map_val_to_str_
+        )
+    );
+
+    STACK_ERROR_HANDLE_(STACK_CTOR(&translator->code, sizeof(uint8_t), STACK_CODE_BEGIN_CAPACITY_));
+
+    translator->cur_block = NULL;
+
+    translator->cur_addr = 0;
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+#undef SMASH_MAP_SIZE_
+
+static void translator_dtor_(elf_translator_t* const translator)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    smash_map_dtor(&translator->labels); // TODO destruct stacks when processing
+
+    stack_dtor(&translator->code);
+}
+
+static enum TranslationError labels_val_ctor_(labels_val_t* const val, const size_t label_addr)
+{
+    lassert(!is_invalid_ptr(val), "");
+
+    val->label_addr = label_addr;
+    STACK_ERROR_HANDLE_(STACK_CTOR(&val->insert_addrs, sizeof(size_t), 1));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+static enum TranslationError add_not_handle_addr_(elf_translator_t* const translator, 
+                                                  const label_t* const label_name, 
+                                                  const size_t insert_addr)
+{
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(label_name), "");
+
+    labels_val_t* const val = smash_map_get_val(&translator->labels, label_name);
+
+    if (!val)
+    {
+        TRANSLATION_ERROR_HANDLE(labels_val_ctor_(val, 0));
+    }
+
+    STACK_ERROR_HANDLE_(stack_push(&val->insert_addrs, &insert_addr));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+static enum TranslationError translate_data_(elf_translator_t* const translator, FILE* out);
+static enum TranslationError translate_text_(elf_translator_t* const translator, fist_t* const fist, FILE* out);
+
+static enum TranslationError translate_syscall_hlt(elf_translator_t* const translator, FILE* out);
+static enum TranslationError translate_syscall_in(elf_translator_t* const translator, FILE* out);
+static enum TranslationError translate_syscall_out(elf_translator_t* const translator, FILE* out);
+static enum TranslationError translate_syscall_pow(elf_translator_t* const translator, FILE* out);
+
 
 #define IR_OP_BLOCK_HANDLE(num_, name_, ...)                                                        \
-        static enum TranslationError translate_##name_(stack_key_t code,                         \ 
-                                                       const ir_block_t* const block, FILE* out);
+        static enum TranslationError translate_##name_(elf_translator_t* const translator, FILE* out);
 
 #include "PYAM_IR/include/codegen.h"
 
 #undef IR_OP_BLOCK_HANDLE
 
-#define IR_OP_BLOCK_HANDLE(num_, name_, ...)                                                        \
-        case num_: TRANSLATION_ERROR_HANDLE(translate_##name_(code, CUR_BLOCK_, out)); break;
 
 enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
 {
     FIST_VERIFY_ASSERT(fist, NULL);
     lassert(!is_invalid_ptr(out), "");
 
-    stack_key_t code = 0;
-    STACK_ERROR_HANDLE_(STACK_CTOR(&code, sizeof(uint8_t), 100));
-
-    for (uint8_t num = 0; num <= 0x0F; ++num)
-    {
-        WRITE_BYTE_(num);
-    }
-
-    const uint8_t input_buffer_size = 32;
-    WRITE_BYTE_(input_buffer_size);
-    for (uint8_t ind = 0; ind < input_buffer_size; ++ind)
-    {
-        WRITE_BYTE_(0);
-    }
-
-    for (size_t elem_ind = fist->next[0]; elem_ind; elem_ind = fist->next[elem_ind])
-    {
-        switch (CUR_BLOCK_->type)
-        {
-    
-#include "PYAM_IR/include/codegen.h"
-            
-        case IR_OP_BLOCK_TYPE_INVALID:
-        default:
-            return TRANSLATION_ERROR_INVALID_OP_TYPE;
-        }
-    }
-
-    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt(code, out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_in(code, out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_out(code, out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_pow(code, out));
-
-
     const size_t add_offset = 0x10;
     const size_t entry_addr = 0x400000;
     const size_t start_data_addr = 0x410000;
+
+    elf_translator_t translator = {};
+    TRANSLATION_ERROR_HANDLE(translator_ctor_(&translator));
+
+    translator.cur_addr = entry_addr;
+
+    const size_t headers_size = sizeof(elf_header_t) + add_offset + 2*sizeof(elf_prog_header_t); 
+
+    // skip headers
+    static_assert(STACK_CODE_BEGIN_CAPACITY_ > headers_size);
+    *stack_size_ptr(translator.code) = headers_size;  
+
+    TRANSLATION_ERROR_HANDLE(
+        translate_text_(&translator, fist, out),
+        translator_dtor_(&translator);
+    );
 
     elf_header_t elf_header =
     {
@@ -108,69 +151,313 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
     {
         .p_type = 1,                                                         // PT_LOAD
         .p_flags64 = 0x5,                                                    // R-X
-        .p_offset = {.field64 = elf_header.e_phoff.field64 + 2*sizeof(elf_prog_header_t) + add_offset}, //TODO
+        .p_offset = {.field64 = headers_size}, //TODO
         .p_vaddr = {.field64 = entry_addr},
         .p_paddr = {.field64 = entry_addr},
-        .p_filesz = 0,                                                      // TODO change after
-        .p_memsz = 0,                                                       // TODO change after
+        .p_filesz = stack_size(translator.code) - headers_size,
+        .p_memsz = stack_size(translator.code) - headers_size,
         .p_align = sysconf(_SC_PAGESIZE),                                   // because on linux >= pagesize
     };
+
+    size_t text_size = stack_size(translator.code) - headers_size; //TODO
+
+    TRANSLATION_ERROR_HANDLE(
+        translate_data_(&translator, out),
+        translator_dtor_(&translator);
+    );
 
     elf_prog_header_t elf_prog_header_data =
     {
         .p_type = 1,                                                         // PT_LOAD
         .p_flags64 = 0x6,                                                    // RW-
-        .p_offset = {.field64 = elf_header.e_phoff.field64 + sizeof(elf_prog_header_t) + add_offset}, //TODO
+        .p_offset = {.field64 = headers_size + text_size}, //TODO
         .p_vaddr = {.field64 = start_data_addr},
         .p_paddr = {.field64 = start_data_addr},
-        .p_filesz = 0,                                                      // TODO change after
-        .p_memsz = 0,                                                       // TODO change after
+        .p_filesz = stack_size(translator.code) - text_size - headers_size,
+        .p_memsz = stack_size(translator.code) - text_size - headers_size,
         .p_align = sysconf(_SC_PAGESIZE),                                   // because on linux >= pagesize
     };
 
+    if (!memcpy(stack_begin(translator.code), &elf_header, sizeof(elf_header)))
+    {
+        perror("Can't memcpy elf_header in translator.code");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    uint8_t temp[add_offset] = {};
+    for (size_t ind = 0; ind < add_offset; ++ind) temp[ind] = 0xFF;
+
+    if (!memcpy(stack_begin(translator.code) + sizeof(elf_header), temp, add_offset))
+    {
+        perror("Can't memcpy FF after elf_header in translator.code");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    if (!memcpy(
+            stack_begin(translator.code) + sizeof(elf_header) + add_offset, 
+            &elf_prog_header_text, 
+            sizeof(elf_prog_header_text)
+        ))
+    {
+        perror("Can't memcpy elf_prog_header_text in translator.code");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    if (!memcpy(
+            stack_begin(translator.code) + sizeof(elf_header) + add_offset + sizeof(elf_prog_header_text), 
+            &elf_prog_header_data, 
+            sizeof(elf_prog_header_data)
+        ))
+    {
+        perror("Can't memcpy elf_prog_header_data in translator.code");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    if (fwrite(stack_begin(translator.code), stack_size(translator.code), sizeof(uint8_t), out) 
+        != stack_size(translator.code))
+    {
+        perror("Can't fwrite code in output file");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_CALL_FUNCTION(stack_key_t code, const ir_block_t* const block, FILE* out)
+enum RegNum
 {
-    lassert(!is_invalid_ptr(block), "");
+    REG_NUM_RAX = 0,
+    REG_NUM_RCX = 1,
+    REG_NUM_RDX = 2,
+    REG_NUM_RBX = 3,
+    REG_NUM_RSP = 4,
+    REG_NUM_RBP = 5,
+    REG_NUM_RSI = 6,
+    REG_NUM_RDI = 7,
+    REG_NUM_R8  = 8,
+    REG_NUM_R9  = 9,
+    REG_NUM_R10 = 10,
+    REG_NUM_R11 = 11,
+    REG_NUM_R12 = 12,
+    REG_NUM_R13 = 13,
+    REG_NUM_R14 = 14,
+    REG_NUM_R15 = 15,
+};
+
+enum ModRM
+{
+    MOD_RM_0_OFF    = 0b00 << 6,
+    MOD_RM_8_OFF    = 0b01 << 6,
+    MOD_RM_32_OFF   = 0b10 << 6,
+    MOD_RM_REG      = 0b11 << 6,
+};
+
+enum OpCode
+{
+    OP_CODE_MOV_RM_R    = 0x89,
+    OP_CODE_MOV_R_RM    = 0x8B,
+    OP_CODE_MOV_RM_I    = 0xC7,
+    OP_CODE_ADD_RM_R    = 0x01,
+    OP_CODE_ADD_R_RM    = 0x03,
+    OP_CODE_ADD_RM_I    = 0x81,
+};
+
+#define WRITE_BYTE_(byte_)                                                                          \
+    do {                                                                                            \
+        const uint8_t byte = (byte_);                                                               \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, &byte));                                  \
+    } while (0)
+
+#define WRITE_WORD_(word_)                                                                          \
+    do {                                                                                            \
+        const uint16_t word = (word_);                                                              \
+        const uint8_t* word_ptr = (uint8_t*)&word;                                                  \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, word_ptr + 0));                           \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, word_ptr + 1));                           \
+    } while (0)
+
+#define WRITE_DWORD_(dword_)                                                                        \
+    do {                                                                                            \
+        const uint32_t dword = (dword_);                                                            \
+        const uint8_t* dword_ptr = (uint8_t*)&dword;                                                \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 0));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 1));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 2));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 3));                          \
+    } while (0)
+
+#define WRITE_QWORD_(qword_)                                                                        \
+    do {                                                                                            \
+        const uint64_t qword = (qword_);                                                            \
+        const uint8_t* qword_ptr = (uint8_t*)&qword;                                                \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 0));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 1));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 2));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 3));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 4));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 5));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 6));                          \
+        STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 7));                          \
+    } while (0)
+    
+#define REX     (0b01000000)
+#define REX_W   (0b01010000)
+
+#define WRITE_CALL_ADDR_(cur_addr, func_addr)                                                       \
+        WRITE_BYTE_(0xE8);                                                                          \
+        WRITE_DWORD_((uint32_t)((ssize_t)(func_addr) - ((ssize_t)(cur_addr) + 5)))
+
+#define WRITE_CALL_EMPTY_()                                                                         \
+        WRITE_BYTE_(0xE8);                                                                          \
+        WRITE_DWORD_((uint32_t)0)
+
+#define WRITE_PUSHRM_(mod_rm, reg_num)                                                              \
+        WRITE_BYTE_(REX_W + (((reg_num) > 7) << 0));                                                \
+        WRITE_BYTE_(0xFF);                                                                          \
+        WRITE_BYTE_((mod_rm) + (0x6 << 3) + ((reg_num) % 8))
+
+#define WRITE_PUSHI_(num)                                                                           \
+        WRITE_BYTE_(0x68);                                                                          \
+        WRITE_DWORD_(num)
+
+#define WRITE_POPRM_(mod_rm, reg_num)                                                               \
+        WRITE_BYTE_(REX_W + (((reg_num) > 7) << 0));                                                \
+        WRITE_BYTE_(0x8F);                                                                          \
+        WRITE_BYTE_((mod_rm) + (0x0 << 3) + ((reg_num) % 8))
+
+#define WRITE_OP_RM_R_(op_code, mod_rm, dest_reg_num, src_reg_num)                                  \
+        WRITE_BYTE_(REX_W + (((dest_reg_num) > 7) << 2) + (((src_reg_num) > 7) << 0));              \
+        WRITE_BYTE_(op_code);                                                                       \
+        WRITE_BYTE_((mod_rm) + (((dest_reg_num) % 8) << 3) + ((src_reg_num) % 8))
+
+#define WRITE_OP_R_RM_(op_code, mod_rm, dest_reg_num, src_reg_num)                                  \
+        WRITE_BYTE_(REX_W + (((src_reg_num) > 7) << 2) + (((dest_reg_num) > 7) << 0));              \
+        WRITE_BYTE_(op_code);                                                                       \
+        WRITE_BYTE_((mod_rm) + (((src_reg_num) % 8) << 3) + ((dest_reg_num) % 8))
+    
+#define WRITE_OP_RM_I_(op_code, mod_rm, reg_num, imm32)                                             \
+        WRITE_BYTE_(REX_W + (((reg_num) > 7) << 0));                                                \
+        WRITE_BYTE_(op_code);                                                                       \
+        WRITE_BYTE_((mod_rm) + (0 << 3) + (reg_num % 8));                                           \
+        WRITE_BYTE_(imm32)
+
+#define IR_OP_BLOCK_HANDLE(num_, name_, ...)                                                        \
+        case num_:                                                                                  \
+            TRANSLATION_ERROR_HANDLE(                                                               \
+                translate_##name_(translator, out)                                                  \
+            );                                                                                      \
+            break;
+
+static enum TranslationError translate_text_(elf_translator_t* const translator, fist_t* const fist, FILE* out)
+{
+    lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(out), "");
 
-    fprintf(out, "call %s\n", block->label_str);
-    fprintf(out, "push rax\n");
+    for (size_t elem_ind = fist->next[0]; elem_ind; elem_ind = fist->next[elem_ind])
+    {
+        translator->cur_block = (const ir_block_t*)fist->data + elem_ind;
+        switch (translator->cur_block->type)
+        {
+    
+#include "PYAM_IR/include/codegen.h"
+            
+        case IR_OP_BLOCK_TYPE_INVALID:
+        default:
+            return TRANSLATION_ERROR_INVALID_OP_TYPE;
+        }
+    }
+
+    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt(&translator, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_in(&translator, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_out(&translator, out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_pow(&translator, out));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_FUNCTION_BODY(stack_key_t code, const ir_block_t* const block, FILE* out)
+#undef IR_OP_BLOCK_HANDLE
+
+static enum TranslationError translate_data_(elf_translator_t* const translator, FILE* out)
 {
-    lassert(!is_invalid_ptr(block), "");
+    lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(out), "");
 
-    fprintf(out, "\n%s:\n", block->label_str);
+    for (uint8_t num = 0; num <= 0x0F; ++num)
+    {
+        WRITE_BYTE_(num);
+    }
 
-    fprintf(out, "pop rax ; save ret val\n");
-    fprintf(out, "mov rbx, rbp ; save old rbp\n");
-
-    fprintf(out, "mov rbp, rsp\n");
-    fprintf(out, "add rbp, %zu\n ; rbp = rsp + arg_cnt\n", 8*block->operand1_num);
-
-    fprintf(out, "mov rsp, rbp\n");
-    fprintf(out, "sub rsp, %zu ; rsp = rbp - local_vars_cnt\n", 8*block->operand2_num);
-
-    fprintf(out, "push rax ; ret val\n");
-    fprintf(out, "push rbx ; old rbp\n");
+    const uint8_t input_buffer_size = 32;
+    WRITE_BYTE_(input_buffer_size);
+    for (uint8_t ind = 0; ind < input_buffer_size; ++ind)
+    {
+        WRITE_BYTE_(0);
+    }
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_COND_JUMP(stack_key_t code, const ir_block_t* const block, FILE* out)
+
+static enum TranslationError translate_CALL_FUNCTION(elf_translator_t* const translator,  FILE* out)
 {
-    lassert(!is_invalid_ptr(block), "");
+    lassert(!is_invalid_ptr(translator), "");
     lassert(!is_invalid_ptr(out), "");
 
-    if (block->operand1_type == IR_OPERAND_TYPE_NUM)
+    label_t func = {};
+    if (!strncpy(func.name, translator->cur_block->label_str, sizeof(func.name)))
+    {
+        perror("Can't strncpy block->label_str in func.name");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    const size_t* func_addr_ptr = smash_map_get_val(&translator->labels, &func);
+
+    if (!func_addr_ptr)
+    {
+        WRITE_CALL_EMPTY_();
+        TRANSLATION_ERROR_HANDLE(add_not_handle_addr_(translator, &func, translator->cur_addr + 1));
+    }
+    else
+    {
+        WRITE_CALL_ADDR_(translator->cur_addr, *func_addr_ptr);
+    }
+
+    translator->cur_addr += 5; // call size
+
+    WRITE_PUSHR_(REG_NUM_RAX);
+    translator->cur_addr += 1;
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+static enum TranslationError translate_FUNCTION_BODY(elf_translator_t* const translator,  FILE* out)
+{
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(out), "");
+
+    WRITE_POPRM_(MOD_RM_REG, REG_NUM_RAX); // save ret val
+    WRITE_OP_RM_R_(OP_CODE_MOV_RM_R, MOD_RM_REG, REG_NUM_RBX, REG_NUM_RBP); // save old rbp
+
+    // rbp = rsp + arg_cnt
+    WRITE_OP_RM_R_(OP_CODE_MOV_RM_R, MOD_RM_REG, REG_NUM_RBP, REG_NUM_RSP);
+    WRITE_OP_RM_I_(OP_CODE_ADD_RM_I, MOD_RM_REG, REG_NUM_RBP, 8 * translator->cur_block->operand1_num);
+    // TODO сделать поле для opcode который /число 
+
+    // rsp = rbp - local_vars_cnt
+    WRITE_MOV_R_R_(false, REG_NUM_RSP, REG_NUM_RBP);
+    WRITE_SUB_R_I_(false, REG_NUM_RSP, 8 * translator->cur_block->operand2_num);
+
+    WRITE_PUSHR_(REG_NUM_RAX); // ret addr
+    WRITE_PUSHR_(REG_NUM_RBX); // old rbp
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+static enum TranslationError translate_COND_JUMP(elf_translator_t* const translator,  FILE* out)
+{
+    lassert(!is_invalid_ptr(translator), "");
+    lassert(!is_invalid_ptr(out), "");
+
+    if (translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
     {
         fprintf(out, "mov rbx, %zu\n", block->operand1_num);
     }
@@ -185,7 +472,7 @@ static enum TranslationError translate_COND_JUMP(stack_key_t code, const ir_bloc
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_ASSIGNMENT(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_ASSIGNMENT(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -205,7 +492,7 @@ static enum TranslationError translate_ASSIGNMENT(stack_key_t code, const ir_blo
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_OPERATION(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_OPERATION(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -337,7 +624,7 @@ static enum TranslationError translate_OPERATION(stack_key_t code, const ir_bloc
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_RETURN(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_RETURN(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -355,7 +642,7 @@ static enum TranslationError translate_RETURN(stack_key_t code, const ir_block_t
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_LABEL(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_LABEL(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -365,7 +652,7 @@ static enum TranslationError translate_LABEL(stack_key_t code, const ir_block_t*
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_SYSCALL(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_SYSCALL(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -382,7 +669,7 @@ static enum TranslationError translate_SYSCALL(stack_key_t code, const ir_block_
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_GLOBAL_VARS(stack_key_t code, const ir_block_t* const block, FILE* out)
+static enum TranslationError translate_GLOBAL_VARS(elf_translator_t* const translator,  FILE* out)
 {
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
@@ -390,7 +677,7 @@ static enum TranslationError translate_GLOBAL_VARS(stack_key_t code, const ir_bl
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_hlt(stack_key_t code, FILE* out)
+static enum TranslationError translate_syscall_hlt(elf_translator_t* const translator, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -404,7 +691,7 @@ static enum TranslationError translate_syscall_hlt(stack_key_t code, FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_in(stack_key_t code, FILE* out)
+static enum TranslationError translate_syscall_in(elf_translator_t* const translator, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -473,7 +760,7 @@ static enum TranslationError translate_syscall_in(stack_key_t code, FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_out(stack_key_t code, FILE* out)
+static enum TranslationError translate_syscall_out(elf_translator_t* const translator, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -549,7 +836,7 @@ static enum TranslationError translate_syscall_out(stack_key_t code, FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_pow(stack_key_t code, FILE* out)
+static enum TranslationError translate_syscall_pow(elf_translator_t* const translator, FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 

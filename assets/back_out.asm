@@ -25,7 +25,7 @@ PUSH 0
 SUB
 POP R1
 PUSH R1
-PUSH 4
+PUSH 2
 ADD
 POP R2
 PUSH 0
@@ -40,40 +40,38 @@ CALL :in
 POP R1
 PUSH R3
 POP [0+R1]
-PUSH [0+R1]
-POP [R2]
-PUSH R2
-PUSH 1
-ADD
-POP R2
-PUSH R1
-
-PUSH R2
-PUSH 1
-SUB
-POP R1
-CALL :out
-POP R1
 PUSH 0
 POP [1+R1]
-PUSH 0
 PUSH [0+R1]
-SUB
-POP [R2]
-PUSH R2
+PUSH [1+R1]
+GEQ
 PUSH 1
-ADD
-POP R2
+JE :label1
+
+PUSH 1
+PUSH 1
+JE :label3
+
+:label0
+PUSH [0+R1]
+PUSH [1+R1]
+GEQ
+PUSH 1
+JE :label1
+
+PUSH 1
+PUSH 1
+JE :label2
+
+:label1
 PUSH [1+R1]
 POP [R2]
 PUSH R2
 PUSH 1
 ADD
 POP R2
-CALL :func_3_2
+CALL :func_2_1
 PUSH R3
-POP [2+R1]
-PUSH [2+R1]
 POP [R2]
 PUSH R2
 PUSH 1
@@ -87,31 +85,23 @@ SUB
 POP R1
 CALL :out
 POP R1
-PUSH 0
-PUSH [0+R1]
-SUB
-POP [R2]
-PUSH R2
 PUSH 1
+PUSH [1+R1]
 ADD
-POP R2
-CALL :func_5_1
-PUSH R3
-POP [3+R1]
-PUSH [3+R1]
-POP [R2]
-PUSH R2
+POP [1+R1]
 PUSH 1
-ADD
-POP R2
-PUSH R1
+PUSH 1
+JE :label0
 
-PUSH R2
-PUSH 1
-SUB
+:label3
+PUSH 228
+PUSH R1
+POP R2
+POP R3
 POP R1
-CALL :out
-POP R1
+RET
+
+:label2
 PUSH 0
 PUSH R1
 POP R2
@@ -120,27 +110,27 @@ POP R1
 RET
 
 
-:func_3_2
+:func_2_1
 PUSH R1
 PUSH R2
-PUSH 2
+PUSH 1
 SUB
 POP R1
 PUSH R1
-PUSH 2
+PUSH 1
 ADD
 POP R2
 PUSH [0+R1]
 PUSH 1
 EQ
 PUSH 1
-JE :label1
+JE :label5
 
 PUSH 1
 PUSH 1
-JE :label0
+JE :label4
 
-:label1
+:label5
 PUSH 1
 PUSH R1
 POP R2
@@ -148,7 +138,26 @@ POP R3
 POP R1
 RET
 
-:label0
+:label4
+PUSH [0+R1]
+PUSH 0
+EQ
+PUSH 1
+JE :label7
+
+PUSH 1
+PUSH 1
+JE :label6
+
+:label7
+PUSH 1
+PUSH R1
+POP R2
+POP R3
+POP R1
+RET
+
+:label6
 PUSH [0+R1]
 PUSH 1
 SUB
@@ -157,13 +166,7 @@ PUSH R2
 PUSH 1
 ADD
 POP R2
-PUSH [1+R1]
-POP [R2]
-PUSH R2
-PUSH 1
-ADD
-POP R2
-CALL :func_3_2
+CALL :func_2_1
 PUSH R3
 PUSH [0+R1]
 MUL
@@ -174,7 +177,7 @@ POP R1
 RET
 
 
-:func_5_1
+:func_4_1
 PUSH R1
 PUSH R2
 PUSH 1
@@ -188,13 +191,13 @@ PUSH [0+R1]
 PUSH 1
 EQ
 PUSH 1
-JE :label3
+JE :label9
 
 PUSH 1
 PUSH 1
-JE :label2
+JE :label8
 
-:label3
+:label9
 PUSH 1
 PUSH R1
 POP R2
@@ -202,18 +205,18 @@ POP R3
 POP R1
 RET
 
-:label2
+:label8
 PUSH [0+R1]
 PUSH 0
 EQ
 PUSH 1
-JE :label5
+JE :label11
 
 PUSH 1
 PUSH 1
-JE :label4
+JE :label10
 
-:label5
+:label11
 PUSH 0
 PUSH R1
 POP R2
@@ -221,7 +224,7 @@ POP R3
 POP R1
 RET
 
-:label4
+:label10
 PUSH [0+R1]
 PUSH 1
 SUB
@@ -230,7 +233,7 @@ PUSH R2
 PUSH 1
 ADD
 POP R2
-CALL :func_5_1
+CALL :func_4_1
 PUSH R3
 PUSH [0+R1]
 PUSH 2
@@ -240,7 +243,7 @@ PUSH R2
 PUSH 1
 ADD
 POP R2
-CALL :func_5_1
+CALL :func_4_1
 PUSH R3
 ADD
 PUSH R1

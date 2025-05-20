@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "translation/structs.h"
-#include "map_utils.h"
+#include "../structs.h"
+#include "elf_map_utils.h"
 
 #define HASH_KEY_ 31
 size_t func_hash_func_(const void* const string)
@@ -28,25 +28,26 @@ int map_key_to_str_ (const void* const elem, const size_t   elem_size,
     if (is_invalid_ptr(*str)) return -1;
     (void)elem_size;
 
-    if (elem && *(const char*)elem)
-    {
-        if (snprintf(*str, mx_str_size, "'%zu, %zu'", 
-                                        ((const func_t*)elem)->num, 
-                                        ((const func_t*)elem)->count_args) 
-            <= 0)
-        {
-            perror("Can't snprintf key to str");
-            return -1;
-        }
-    }
-    else
-    {
-        if (snprintf(*str, mx_str_size, "(nul)") < 0)
-        {
-            perror("Can't snprintf key (nul) to str");
-            return -1;
-        }
-    }
+    //FIXME
+    // if (elem && *(const char*)elem)
+    // {
+    //     if (snprintf(*str, mx_str_size, "'%zu, %zu'", 
+    //                                     ((const label_t*)elem)->num, 
+    //                                     ((const label_t*)elem)->count_args) 
+    //         <= 0)
+    //     {
+    //         perror("Can't snprintf key to str");
+    //         return -1;
+    //     }
+    // }
+    // else
+    // {
+    //     if (snprintf(*str, mx_str_size, "(nul)") < 0)
+    //     {
+    //         perror("Can't snprintf key (nul) to str");
+    //         return -1;
+    //     }
+    // }
 
     return 0;
 }

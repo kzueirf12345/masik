@@ -18,7 +18,7 @@ mov rbp, rsp
 add rbp, 0
  ; rbp = rsp + arg_cnt
 mov rsp, rbp
-sub rsp, 32 ; rsp = rbp - local_vars_cnt
+sub rsp, 16 ; rsp = rbp - local_vars_cnt
 push rax ; ret val
 push rbx ; old rbp
 push 0
@@ -27,62 +27,14 @@ call in
 push rax ; ret val
 add rsp, 0
 pop qword [rbp-8]
-push qword [rbp-8]
-call out
-add rsp, 8
 push 0
 pop qword [rbp-16]
-push 0
 push qword [rbp-8]
-pop rcx
-pop rbx
-sub rbx, rcx
-push rbx
 push qword [rbp-16]
-call func_3_2
-push rax
-pop qword [rbp-24]
-push qword [rbp-24]
-call out
-add rsp, 8
-push 0
-push qword [rbp-8]
-pop rcx
-pop rbx
-sub rbx, rcx
-push rbx
-call func_5_1
-push rax
-pop qword [rbp-32]
-push qword [rbp-32]
-call out
-add rsp, 8
-push 0
-pop rax ; save ret val
-pop rbx ; rbp val
-pop rcx ; ret addr
-mov rsp, rbp
-mov rbp, rbx
-push rcx
-ret
-
-
-func_3_2:
-pop rax ; save ret val
-mov rbx, rbp ; save old rbp
-mov rbp, rsp
-add rbp, 16
- ; rbp = rsp + arg_cnt
-mov rsp, rbp
-sub rsp, 16 ; rsp = rbp - local_vars_cnt
-push rax ; ret val
-push rbx ; old rbp
-push qword [rbp-8]
-push 1
 pop rcx
 pop rbx
 cmp rbx, rcx
-sete bl
+setge bl
 movzx rbx, bl
 push rbx
 pop rbx
@@ -91,33 +43,54 @@ jne label1
 
 mov rbx, 1
 test rbx, rbx
-jne label0
-
-label1:
-push 1
-pop rax ; save ret val
-pop rbx ; rbp val
-pop rcx ; ret addr
-mov rsp, rbp
-mov rbp, rbx
-push rcx
-ret
+jne label3
 
 label0:
 push qword [rbp-8]
-push 1
-pop rcx
-pop rbx
-sub rbx, rcx
-push rbx
 push qword [rbp-16]
-call func_3_2
-push rax
-push qword [rbp-8]
 pop rcx
 pop rbx
-imul rbx, rcx
+cmp rbx, rcx
+setge bl
+movzx rbx, bl
 push rbx
+pop rbx
+test rbx, rbx
+jne label1
+
+mov rbx, 1
+test rbx, rbx
+jne label2
+
+label1:
+push qword [rbp-16]
+call func_2_1
+push rax
+call out
+add rsp, 8
+push 1
+push qword [rbp-16]
+pop rcx
+pop rbx
+add rbx, rcx
+push rbx
+pop qword [rbp-16]
+mov rbx, 1
+test rbx, rbx
+jne label0
+
+label3:
+push 228
+pop rax ; save ret val
+pop rbx ; rbp val
+pop rcx ; ret addr
+mov rsp, rbp
+mov rbp, rbx
+push rcx
+ret
+
+label2:
+push 0
 pop rax ; save ret val
 pop rbx ; rbp val
 pop rcx ; ret addr
@@ -127,7 +100,7 @@ push rcx
 ret
 
 
-func_5_1:
+func_2_1:
 pop rax ; save ret val
 mov rbx, rbp ; save old rbp
 mov rbp, rsp
@@ -147,33 +120,6 @@ movzx rbx, bl
 push rbx
 pop rbx
 test rbx, rbx
-jne label3
-
-mov rbx, 1
-test rbx, rbx
-jne label2
-
-label3:
-push 1
-pop rax ; save ret val
-pop rbx ; rbp val
-pop rcx ; ret addr
-mov rsp, rbp
-mov rbp, rbx
-push rcx
-ret
-
-label2:
-push qword [rbp-8]
-push 0
-pop rcx
-pop rbx
-cmp rbx, rcx
-sete bl
-movzx rbx, bl
-push rbx
-pop rbx
-test rbx, rbx
 jne label5
 
 mov rbx, 1
@@ -181,7 +127,7 @@ test rbx, rbx
 jne label4
 
 label5:
-push 0
+push 1
 pop rax ; save ret val
 pop rbx ; rbp val
 pop rcx ; ret addr
@@ -192,12 +138,125 @@ ret
 
 label4:
 push qword [rbp-8]
+push 0
+pop rcx
+pop rbx
+cmp rbx, rcx
+sete bl
+movzx rbx, bl
+push rbx
+pop rbx
+test rbx, rbx
+jne label7
+
+mov rbx, 1
+test rbx, rbx
+jne label6
+
+label7:
+push 1
+pop rax ; save ret val
+pop rbx ; rbp val
+pop rcx ; ret addr
+mov rsp, rbp
+mov rbp, rbx
+push rcx
+ret
+
+label6:
+push qword [rbp-8]
 push 1
 pop rcx
 pop rbx
 sub rbx, rcx
 push rbx
-call func_5_1
+call func_2_1
+push rax
+push qword [rbp-8]
+pop rcx
+pop rbx
+imul rbx, rcx
+push rbx
+pop rax ; save ret val
+pop rbx ; rbp val
+pop rcx ; ret addr
+mov rsp, rbp
+mov rbp, rbx
+push rcx
+ret
+
+
+func_4_1:
+pop rax ; save ret val
+mov rbx, rbp ; save old rbp
+mov rbp, rsp
+add rbp, 8
+ ; rbp = rsp + arg_cnt
+mov rsp, rbp
+sub rsp, 8 ; rsp = rbp - local_vars_cnt
+push rax ; ret val
+push rbx ; old rbp
+push qword [rbp-8]
+push 1
+pop rcx
+pop rbx
+cmp rbx, rcx
+sete bl
+movzx rbx, bl
+push rbx
+pop rbx
+test rbx, rbx
+jne label9
+
+mov rbx, 1
+test rbx, rbx
+jne label8
+
+label9:
+push 1
+pop rax ; save ret val
+pop rbx ; rbp val
+pop rcx ; ret addr
+mov rsp, rbp
+mov rbp, rbx
+push rcx
+ret
+
+label8:
+push qword [rbp-8]
+push 0
+pop rcx
+pop rbx
+cmp rbx, rcx
+sete bl
+movzx rbx, bl
+push rbx
+pop rbx
+test rbx, rbx
+jne label11
+
+mov rbx, 1
+test rbx, rbx
+jne label10
+
+label11:
+push 0
+pop rax ; save ret val
+pop rbx ; rbp val
+pop rcx ; ret addr
+mov rsp, rbp
+mov rbp, rbx
+push rcx
+ret
+
+label10:
+push qword [rbp-8]
+push 1
+pop rcx
+pop rbx
+sub rbx, rcx
+push rbx
+call func_4_1
 push rax
 push qword [rbp-8]
 push 2
@@ -205,7 +264,7 @@ pop rcx
 pop rbx
 sub rbx, rcx
 push rbx
-call func_5_1
+call func_4_1
 push rax
 pop rcx
 pop rbx

@@ -12,6 +12,7 @@ enum TranslationError
     TRANSLATION_ERROR_INVALID_OP_TYPE       = 4,
     TRANSLATION_ERROR_INVALID_LEXEM_TYPE    = 5,
     TRANSLATION_ERROR_REDECL_VAR            = 6,
+    TRANSLATION_ERROR_SMASH_MAP             = 7,
 };
 static_assert(TRANSLATION_ERROR_SUCCESS == 0, "");
 

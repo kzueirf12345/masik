@@ -24,22 +24,6 @@ int main(const int argc, char* const argv[])
         return EXIT_FAILURE;
     }
 
-    // tree_t tree = {};
-    // TREE_ERROR_HANDLE(tree_ctor(&tree, flags_objs.in_filename),
-    //                                                                           dtor_all(&flags_objs);
-    // );
-
-    // TRANSLATION_ERROR_HANDLE(translate_splu(&tree, flags_objs.splu_out),
-    //                                                          dtor_all(&flags_objs);tree_dtor(&tree);
-    // );
-
-    // TRANSLATION_ERROR_HANDLE(translate_nasm(&tree, flags_objs.nasm_out),
-    //                                                          dtor_all(&flags_objs);tree_dtor(&tree);
-    // );
-
-
-    // tree_dtor(&tree);
-
     fist_t fist = {};
     FIST_ERROR_HANDLE(FIST_CTOR(&fist, sizeof(ir_block_t), 10),
                                                                               dtor_all(&flags_objs);
