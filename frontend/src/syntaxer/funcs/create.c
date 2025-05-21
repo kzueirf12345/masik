@@ -300,7 +300,7 @@ tree_elem_t* desc_func_(desc_state_t* const desc_state)
 
     lexem_t lexem_local_vars_cnt = {
         .type = LEXEM_TYPE_NUM, 
-        .data = {.num = desc_state->local_vars_cnt}
+        .data = {.num = (num_t)desc_state->local_vars_cnt}
     };
     
     // lexem_t lexem_please = {.type = LEXEM_TYPE_OP, .data = {.op = OP_TYPE_PLEASE}};
@@ -326,7 +326,7 @@ tree_elem_t* desc_main_(desc_state_t* const desc_state)
 
     lexem_t lexem_local_vars_cnt = {
         .type = LEXEM_TYPE_NUM, 
-        .data = {.num = desc_state->local_vars_cnt}
+        .data = {.num = (num_t)desc_state->local_vars_cnt}
     };
 
     return CREATE_ELEM_(lexem_local_vars_cnt, elem, NULL);

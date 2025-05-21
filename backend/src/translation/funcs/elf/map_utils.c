@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../structs.h"
-#include "elf_map_utils.h"
+#include "translation/funcs/elf/structs.h"
+#include "map_utils.h"
 
 #define HASH_KEY_ 31
 size_t func_hash_func(const void* const string)

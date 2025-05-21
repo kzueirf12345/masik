@@ -5,9 +5,9 @@
 #include "stack_on_array/libstack.h"
 #include "ir_fist/funcs/funcs.h"
 #include "ir_fist/structs.h"
-#include "translation/structs.h"
-#include "elf_map_utils.h"
-#include "elf_lib.h"
+#include "translation/funcs/elf/structs.h"
+#include "map_utils.h"
+#include "write_lib.h"
 
 #define STACK_ERROR_HANDLE_(call_func, ...)                                                         \
     do {                                                                                            \
@@ -46,55 +46,120 @@ static uint8_t create_sib_(const enum RegNum base_reg)
     return (uint8_t)((SIB_SCALE1 << 6) + (SIB_NO_INDEX << 3) + (base_reg % 8));
 }
 
-enum TranslationError write_byte(elf_translator_t* const translator, const uint8_t byte)
+static enum TranslationError write_byte_(stack_key_t stack, const uint8_t byte)
 {
-    lassert(!is_invalid_ptr(translator), "");
-
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, &byte)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, &byte)); 
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError write_word(elf_translator_t* const translator, const uint16_t word)
+static enum TranslationError write_word_(stack_key_t stack, const uint16_t word)
 {
-    lassert(!is_invalid_ptr(translator), "");
-
     const uint8_t* word_ptr = (const uint8_t*)&word;
 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, word_ptr + 0)); 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, word_ptr + 1)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, word_ptr + 0)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, word_ptr + 1)); 
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError write_dword(elf_translator_t* const translator, const uint32_t dword)
+static enum TranslationError write_dword_(stack_key_t stack, const uint32_t dword)
 {
-    lassert(!is_invalid_ptr(translator), "");
-
     const uint8_t* dword_ptr = (const uint8_t*)&dword;
 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 0)); 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 1)); 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 2)); 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, dword_ptr + 3)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, dword_ptr + 0)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, dword_ptr + 1)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, dword_ptr + 2)); 
+    STACK_ERROR_HANDLE_(stack_push(&stack, dword_ptr + 3)); 
 
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-enum TranslationError write_qword(elf_translator_t* const translator, const uint64_t qword)
+static enum TranslationError write_qword_(stack_key_t stack, const uint64_t qword)
+{
+    const uint8_t* qword_ptr = (const uint8_t*)&qword;
+
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 0));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 1));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 2));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 3));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 4));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 5));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 6));
+    STACK_ERROR_HANDLE_(stack_push(&stack, qword_ptr + 7));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_byte_text(elf_translator_t* const translator, const uint8_t byte)
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    const uint8_t* qword_ptr = (const uint8_t*)&qword;
+    TRANSLATION_ERROR_HANDLE(write_byte_(translator->text, byte));
 
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 0));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 1));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 2));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 3));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 4));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 5));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 6));
-    STACK_ERROR_HANDLE_(stack_push(&translator->code, qword_ptr + 7));
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_word_text(elf_translator_t* const translator, const uint16_t word)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_word_(translator->text, word));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_dword_text(elf_translator_t* const translator, const uint32_t dword)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_dword_(translator->text, dword));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_qword_text(elf_translator_t* const translator, const uint64_t qword)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_qword_(translator->text, qword));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+
+enum TranslationError write_byte_data(elf_translator_t* const translator, const uint8_t byte)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_byte_(translator->data, byte));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_word_data(elf_translator_t* const translator, const uint16_t word)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_word_(translator->data, word));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_dword_data(elf_translator_t* const translator, const uint32_t dword)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_dword_(translator->data, dword));
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_qword_data(elf_translator_t* const translator, const uint64_t qword)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_qword_(translator->data, qword));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -114,20 +179,20 @@ static enum TranslationError write_command_(
     size_t instr_size = 0;
 
     if (rex) {
-        TRANSLATION_ERROR_HANDLE(write_byte(translator, rex));
+        TRANSLATION_ERROR_HANDLE(write_byte_text(translator, rex));
         ++instr_size;
     }
 
-    TRANSLATION_ERROR_HANDLE(write_byte(translator, (uint8_t)opcode));
+    TRANSLATION_ERROR_HANDLE(write_byte_text(translator, (uint8_t)opcode));
     ++instr_size;
 
     if (modrm != 0) {
-        TRANSLATION_ERROR_HANDLE(write_byte(translator, modrm));
+        TRANSLATION_ERROR_HANDLE(write_byte_text(translator, modrm));
         ++instr_size;
     }
 
     if (sib != 0) {
-        TRANSLATION_ERROR_HANDLE(write_byte(translator, sib));
+        TRANSLATION_ERROR_HANDLE(write_byte_text(translator, sib));
         ++instr_size;
     }
 
@@ -136,19 +201,19 @@ static enum TranslationError write_command_(
         case 0:
             break;
         case sizeof(uint8_t):
-            TRANSLATION_ERROR_HANDLE(write_byte(translator, (uint8_t)imm));
+            TRANSLATION_ERROR_HANDLE(write_byte_text(translator, (uint8_t)imm));
             instr_size += sizeof(uint8_t);
             break;
         case sizeof(uint16_t):
-            TRANSLATION_ERROR_HANDLE(write_word(translator, (uint16_t)imm));
+            TRANSLATION_ERROR_HANDLE(write_word_text(translator, (uint16_t)imm));
             instr_size += sizeof(uint16_t);
             break;
         case sizeof(uint32_t):
-            TRANSLATION_ERROR_HANDLE(write_dword(translator, (uint32_t)imm));
+            TRANSLATION_ERROR_HANDLE(write_dword_text(translator, (uint32_t)imm));
             instr_size += sizeof(uint32_t);
             break;
         case sizeof(uint64_t):
-            TRANSLATION_ERROR_HANDLE(write_qword(translator, (uint64_t)imm));
+            TRANSLATION_ERROR_HANDLE(write_qword_text(translator, (uint64_t)imm));
             instr_size += sizeof(uint64_t);
             break;
         default:
@@ -173,7 +238,7 @@ enum TranslationError write_call_addr(elf_translator_t* const translator, const 
             0, 
             0,
             0,
-            func_addr ? (ssize_t)func_addr - (ssize_t)translator->cur_addr + 5 : 0ull,
+            (uint64_t)(func_addr ? (ssize_t)func_addr - (ssize_t)translator->cur_addr + 5 : 0),
             sizeof(uint32_t)
         )
     );
@@ -391,8 +456,8 @@ enum TranslationError write_syscall(elf_translator_t* const translator)
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    TRANSLATION_ERROR_HANDLE(write_byte(translator, OP_CODE_SYSCALL1));
-    TRANSLATION_ERROR_HANDLE(write_byte(translator, OP_CODE_SYSCALL2));
+    TRANSLATION_ERROR_HANDLE(write_byte_text(translator, OP_CODE_SYSCALL1));
+    TRANSLATION_ERROR_HANDLE(write_byte_text(translator, OP_CODE_SYSCALL2));
 
     return TRANSLATION_ERROR_SUCCESS;
 }

@@ -46,13 +46,15 @@ LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils
 	   -L../libs/hash_table -lhash_table -L../libs/PYAM_IR -lpyam_ir
 
 
-DIRS = flags translation translation/verification translation/funcs ir_fist ir_fist/funcs ir_fist/verification
+DIRS = flags translation translation/verification translation/funcs ir_fist ir_fist/funcs \
+	   ir_fist/verification translation/funcs/elf
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
 SOURCES = main.c flags/flags.c translation/verification/verification.c \
 		  translation/funcs/splu.c translation/funcs/nasm.c ir_fist/funcs/funcs.c \
-		  ir_fist/verification/verification.c translation/funcs/elf.c translation/funcs/elf_lib.c \
-		  translation/funcs/elf_map_utils.c 
+		  ir_fist/verification/verification.c translation/funcs/elf/elf.c \
+		  translation/funcs/elf/write_lib.c translation/funcs/elf/map_utils.c \
+		  translation/funcs/elf/labels.c translation/funcs/elf/headers.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)

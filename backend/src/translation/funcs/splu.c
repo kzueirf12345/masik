@@ -16,10 +16,10 @@
         }                                                                                           \
     } while(0)
 
-static enum TranslationError translate_syscall_hlt(FILE* out);
-static enum TranslationError translate_syscall_in(FILE* out);
-static enum TranslationError translate_syscall_out(FILE* out);
-static enum TranslationError translate_syscall_pow(FILE* out);
+static enum TranslationError translate_syscall_hlt_(FILE* out);
+static enum TranslationError translate_syscall_in_(FILE* out);
+static enum TranslationError translate_syscall_out_(FILE* out);
+static enum TranslationError translate_syscall_pow_(FILE* out);
 
 #define CUR_BLOCK_ ((const ir_block_t*)fist->data + elem_ind)
 
@@ -56,10 +56,10 @@ enum TranslationError translate_splu(const fist_t* const fist, FILE* out)
         }
     }
 
-    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_in(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_out(out));
-    TRANSLATION_ERROR_HANDLE(translate_syscall_pow(out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_hlt_(out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_in_(out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_out_(out));
+    TRANSLATION_ERROR_HANDLE(translate_syscall_pow_(out));
 
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -280,7 +280,7 @@ static enum TranslationError translate_GLOBAL_VARS(const ir_block_t* const block
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_hlt(FILE* out)
+static enum TranslationError translate_syscall_hlt_(FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -296,7 +296,7 @@ static enum TranslationError translate_syscall_hlt(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_in(FILE* out)
+static enum TranslationError translate_syscall_in_(FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
     
@@ -310,7 +310,7 @@ static enum TranslationError translate_syscall_in(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_out(FILE* out)
+static enum TranslationError translate_syscall_out_(FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 
@@ -325,7 +325,7 @@ static enum TranslationError translate_syscall_out(FILE* out)
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-static enum TranslationError translate_syscall_pow(FILE* out)
+static enum TranslationError translate_syscall_pow_(FILE* out)
 {
     lassert(!is_invalid_ptr(out), "");
 

@@ -54,6 +54,10 @@ FLAGS += $(ADD_FLAGS)
 
 all:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all nasm_all elf_all
 
+all_elf:   libs_build frontend_all midlend_all ir_backend_all backend_all elf_all
+all_nasm:  libs_build frontend_all midlend_all ir_backend_all backend_all nasm_all
+all_splu:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all
+
 build: libs_build frontend_build midlend_build ir_backend_build backend_build splu_build
 
 start: frontend_start midlend_start ir_backend_start backend_start splu_start nasm_build nasm_start elf_start

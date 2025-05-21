@@ -2,7 +2,7 @@
 #define MASIK_BACKEND_SRC_TRANSLATION_FUNCS_ELF_LIB_H
 
 #include "ir_fist/structs.h"
-#include "translation/structs.h"
+#include "translation/funcs/elf/structs.h"
 
 #define REX     (0b01000000)
 #define REX_W   (0b01001000)
@@ -78,10 +78,15 @@ enum SIBScale
 #define SIB_NO_INDEX (0b100)
 #define MOD_RM_USE_SIB (0b100)
 
-enum TranslationError write_byte(elf_translator_t* const translator, const uint8_t byte);
-enum TranslationError write_word(elf_translator_t* const translator, const uint16_t word);
-enum TranslationError write_dword(elf_translator_t* const translator, const uint32_t dword);
-enum TranslationError write_qword(elf_translator_t* const translator, const uint64_t qword);
+enum TranslationError write_byte_text(elf_translator_t* const translator, const uint8_t byte);
+enum TranslationError write_word_text(elf_translator_t* const translator, const uint16_t word);
+enum TranslationError write_dword_text(elf_translator_t* const translator, const uint32_t dword);
+enum TranslationError write_qword_text(elf_translator_t* const translator, const uint64_t qword);
+
+enum TranslationError write_byte_data(elf_translator_t* const translator, const uint8_t byte);
+enum TranslationError write_word_data(elf_translator_t* const translator, const uint16_t word);
+enum TranslationError write_dword_data(elf_translator_t* const translator, const uint32_t dword);
+enum TranslationError write_qword_data(elf_translator_t* const translator, const uint64_t qword);
 
 enum TranslationError write_call_addr   (elf_translator_t* const translator, const size_t func_addr);
 
