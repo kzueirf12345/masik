@@ -6,7 +6,7 @@
 #include "map_utils.h"
 
 #define HASH_KEY_ 31
-size_t func_hash_func_(const void* const string)
+size_t func_hash_func(const void* const string)
 {
     lassert(!is_invalid_ptr(string), "");
 
@@ -21,7 +21,7 @@ size_t func_hash_func_(const void* const string)
 }
 #undef HASH_KEY_
 
-int map_key_to_str_ (const void* const elem, const size_t   elem_size,
+int map_key_to_str (const void* const elem, const size_t   elem_size,
                             char* const *     str,  const size_t mx_str_size)
 {
     if (is_invalid_ptr(str))  return -1;
@@ -51,7 +51,7 @@ int map_key_to_str_ (const void* const elem, const size_t   elem_size,
     return 0;
 }
 
-int map_val_to_str_ (const void* const elem, const size_t   elem_size,
+int map_val_to_str (const void* const elem, const size_t   elem_size,
                             char* const *     str,  const size_t mx_str_size)
 {
     if (is_invalid_ptr(str))  return -1;

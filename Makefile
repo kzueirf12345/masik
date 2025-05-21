@@ -7,7 +7,8 @@
 		ir_backend_all ir_backend_build ir_backend_clean ir_backend_rebuild ir_backend_start \
 		backend_all backend_build backend_clean backend_rebuild backend_start \
 		splu_all splu_build splu_clean splu_rebuild splu_start \
-		nasm_all nasm_build nasm_clean nasm_rebuild nasm_start
+		nasm_all nasm_build nasm_clean nasm_rebuild nasm_start \
+		elf_all elf_clean elf_rebuild elf_start
 
 PROJECT_NAME = masik
 
@@ -51,13 +52,24 @@ endif
 FLAGS += $(ADD_FLAGS)
 
 
-all:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all nasm_all
+all:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all nasm_all elf_all
 
 build: libs_build frontend_build midlend_build ir_backend_build backend_build splu_build
 
-start: frontend_start midlend_start ir_backend_start backend_start splu_start nasm_build nasm_start
+start: frontend_start midlend_start ir_backend_start backend_start splu_start nasm_build nasm_start elf_start
 
-rebuild: libs_rebuild frontend_rebuild midlend_rebuild ir_backend_rebuild backend_rebuild splu_rebuild nasm_clean
+rebuild: libs_rebuild frontend_rebuild midlend_rebuild ir_backend_rebuild backend_rebuild splu_rebuild nasm_clean elf_clean
+
+ELF_FILENAME = masik_elf
+
+elf_all: elf_start
+
+elf_start:
+	chmod +rwx ./$(ELF_FILENAME).out ;
+	./$(ELF_FILENAME).out
+
+elf_clean:
+	rm ./$(ELF_FILENAME).out
 
 
 ASM_LINKER = ld

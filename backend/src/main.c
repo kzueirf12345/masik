@@ -36,10 +36,14 @@ int main(const int argc, char* const argv[])
                                                              dtor_all(&flags_objs);fist_dtor(&fist);
     );
 
-
     TRANSLATION_ERROR_HANDLE(translate_nasm(&fist, flags_objs.nasm_out),
                                                              dtor_all(&flags_objs);fist_dtor(&fist);
     );
+
+    TRANSLATION_ERROR_HANDLE(translate_elf(&fist, flags_objs.elf_out),
+                                                             dtor_all(&flags_objs);fist_dtor(&fist);
+    );
+
 
     fist_dtor(&fist);
     

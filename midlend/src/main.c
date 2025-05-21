@@ -30,6 +30,8 @@ int main(const int argc, char* const argv[])
                                                              tree_dtor(&tree);dtor_all(&flags_objs);
     );
 
+    tree_dumb(&tree);
+
     TREE_ERROR_HANDLE(tree_print(tree, flags_objs.out),
                                                              tree_dtor(&tree);dtor_all(&flags_objs);
     );

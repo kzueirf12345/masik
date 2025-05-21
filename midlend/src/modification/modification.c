@@ -33,6 +33,7 @@ enum TreeError tree_modify(tree_t* const tree, const enum Mode mode)
         break;
 
     case MODE_SIMPLIFY:
+        // fprintf(stderr, RED_TEXT("mode simplify\n"));
         TREE_ERROR_HANDLE(tree_simplify_(tree));
         break;
 
@@ -88,18 +89,22 @@ enum TreeError tree_simplify_constants_(tree_elem_t** elem, size_t* const count_
     lassert(!is_invalid_ptr(elem), "");
     lassert(!is_invalid_ptr(count_changes), "");
 
-    if (!*elem || (*elem)->lexem.type != LEXEM_TYPE_OP)
+    if (!*elem)
         return TREE_ERROR_SUCCESS;
     
     TREE_ERROR_HANDLE(tree_simplify_constants_(&(*elem)->lt, count_changes));
     TREE_ERROR_HANDLE(tree_simplify_constants_(&(*elem)->rt, count_changes));
 
-
-    if (((*elem)->lt && ((*elem)->lt->lexem.type != LEXEM_TYPE_NUM))
-     || ((*elem)->rt && ((*elem)->rt->lexem.type != LEXEM_TYPE_NUM))
-     || !OPERATIONS[(*elem)->lexem.data.op].is_ariphmetic)
+    if((*elem)->lexem.type != LEXEM_TYPE_OP)
         return TREE_ERROR_SUCCESS;
     
+    const bool is_correct = 
+        ((*elem)->lt && ((*elem)->lt->lexem.type == LEXEM_TYPE_NUM)) &&
+        ((*elem)->rt && ((*elem)->rt->lexem.type == LEXEM_TYPE_NUM)) &&
+        OPERATIONS[(*elem)->lexem.data.op].is_ariphmetic;
+
+    if (!is_correct)
+        return TREE_ERROR_SUCCESS;
 
     tree_elem_t* temp = *elem;
 

@@ -34,9 +34,9 @@ static enum IrTranslationError translator_ctor_(translator_t* const translator)
             SMASH_MAP_SIZE_, 
             sizeof(func_t), 
             sizeof(size_t), 
-            func_hash_func_,
-            map_key_to_str_,
-            map_val_to_str_
+            func_hash_func,
+            map_key_to_str,
+            map_val_to_str
         )
     );
 
@@ -107,7 +107,7 @@ enum IrTranslationError translate(const tree_t* const tree, FILE* out)
     IR_GLOBAL_VARS_NUM_(0ul); //hard cock
     IR_CALL_MAIN_(ret_main_tmp);
 
-    IR_GIVE_ARG_(0, ret_main_tmp);
+    IR_GIVE_ARG_(0ull, ret_main_tmp);
     IR_SYSCALL_(translator.temp_var_num++, 
         kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_HLT_INDEX].NumberOfArguments
@@ -342,8 +342,8 @@ static enum IrTranslationError translate_POW(translator_t* const translator, con
 
     const size_t second_op = translator->temp_var_num - 1;
 
-    IR_GIVE_ARG_(0, first_op);
-    IR_GIVE_ARG_(1, second_op);
+    IR_GIVE_ARG_(0ull, first_op);
+    IR_GIVE_ARG_(1ull, second_op);
 
     IR_SYSCALL_(translator->temp_var_num++, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
@@ -674,8 +674,8 @@ static enum IrTranslationError translate_POW_ASSIGNMENT(translator_t* const tran
 
     IR_ASSIGN_TMP_VAR_(first_op_tmp, first_op, "");
 
-    IR_GIVE_ARG_(0, first_op_tmp);
-    IR_GIVE_ARG_(1, second_op);
+    IR_GIVE_ARG_(0ull, first_op_tmp);
+    IR_GIVE_ARG_(1ull, second_op);
 
     IR_SYSCALL_(op_res_tmp, kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].Name, 
         kIR_SYS_CALL_ARRAY[SYSCALL_POW_INDEX].NumberOfArguments
@@ -1241,7 +1241,7 @@ static enum IrTranslationError translate_OUT(translator_t* const translator, con
         IR_TRANSLATION_ERROR_HANDLE(translate_recursive_(translator, arg, out));
         size_t argument = translator->temp_var_num - 1;
 
-        IR_GIVE_ARG_(0, argument);
+        IR_GIVE_ARG_(0ull, argument);
 
         IR_SYSCALL_(
             translator->temp_var_num++, 

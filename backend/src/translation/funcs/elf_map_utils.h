@@ -6,10 +6,10 @@
 #include "hash_table/libhash_table.h"
 #include "translation/verification/verification.h"
 
-size_t func_hash_func_(const void* const string);
-int map_key_to_str_ (const void* const elem, const size_t   elem_size,
+size_t func_hash_func(const void* const string);
+int map_key_to_str (const void* const elem, const size_t   elem_size,
                      char* const *     str,  const size_t mx_str_size);
-int map_val_to_str_ (const void* const elem, const size_t   elem_size,
+int map_val_to_str (const void* const elem, const size_t   elem_size,
                      char* const *     str,  const size_t mx_str_size);
 
 #define SMASH_MAP_ERROR_HANDLE_(call_func, ...)                                                     \

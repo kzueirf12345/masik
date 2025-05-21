@@ -38,18 +38,25 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
 
     if (!strncpy(flags_objs->splu_filename, "../assets/back_out.asm", FILENAME_MAX))
     {
-        perror("Can't strncpy flags_objs->in_filename");
+        perror("Can't strncpy flags_objs->splu_filename,");
         return FLAGS_ERROR_SUCCESS;
     }
 
     if (!strncpy(flags_objs->nasm_filename, "../assets/masik_nasm.asm", FILENAME_MAX))
     {
-        perror("Can't strncpy flags_objs->in_filename");
+        perror("Can't strncpy flags_objs->nasm_filename");
         return FLAGS_ERROR_SUCCESS;
     }
 
-    flags_objs->splu_out = NULL;
-    flags_objs->nasm_out  = NULL;
+    if (!strncpy(flags_objs->elf_filename, "../masik_elf.out", FILENAME_MAX))
+    {
+        perror("Can't strncpy flags_objs->elf_filename");
+        return FLAGS_ERROR_SUCCESS;
+    }
+
+    flags_objs->splu_out    = NULL;
+    flags_objs->nasm_out    = NULL;
+    flags_objs->elf_out     = NULL;
 
     return FLAGS_ERROR_SUCCESS;
 }
@@ -70,6 +77,12 @@ enum FlagsError flags_objs_dtor (flags_objs_t* const flags_objs)
         return FLAGS_ERROR_FAILURE;
     }
 
+    if (flags_objs->elf_out && fclose(flags_objs->elf_out))
+    {
+        perror("Can't fclose flags_objs->elf_out");
+        return FLAGS_ERROR_FAILURE;
+    }
+
     return FLAGS_ERROR_SUCCESS;
 }
 
@@ -81,7 +94,7 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
     lassert(argc, "");
 
     int getopt_rez = 0;
-    while ((getopt_rez = getopt(argc, argv, "l:i:s:a:")) != -1)
+    while ((getopt_rez = getopt(argc, argv, "l:i:s:a:e:")) != -1)
     {
         switch (getopt_rez)
         {
@@ -127,6 +140,17 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
                 break;
             }
 
+            case 'e':
+            {
+                if (!strncpy(flags_objs->elf_filename, optarg, FILENAME_MAX))
+                {
+                    perror("Can't strncpy flags_objs->elf_filename");
+                    return FLAGS_ERROR_FAILURE;
+                }
+
+                break;
+            }
+
             default:
             {
                 fprintf(stderr, "Getopt error - d: %d, c: %c\n", getopt_rez, (char)getopt_rez);
@@ -144,6 +168,12 @@ enum FlagsError flags_processing(flags_objs_t* const flags_objs,
     if (!(flags_objs->nasm_out = fopen(flags_objs->nasm_filename, "wb")))
     {
         perror("Can't open asm_out file");
+        return FLAGS_ERROR_FAILURE;
+    }
+
+    if (!(flags_objs->elf_out = fopen(flags_objs->elf_filename, "wb")))
+    {
+        perror("Can't open elf_out file");
         return FLAGS_ERROR_FAILURE;
     }
     
