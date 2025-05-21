@@ -151,7 +151,6 @@ static enum TranslationError add_label_(elf_translator_t* const translator, labe
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-// static enum TranslationError translate_data_(elf_translator_t* const translator, FILE* out);
 static enum TranslationError translate_text_(elf_translator_t* const translator, const fist_t* const fist, FILE* out);
 
 static enum TranslationError translate_syscall_hlt(elf_translator_t* const translator, FILE* out);
@@ -218,33 +217,14 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
         }
     }
 
+    const size_t text_size = stack_size(translator.code);
+
     const char shstrtab[] = 
     "\0"
     ".shstrtab\0"
     ".text"; 
 
     const size_t shstrtab_size = sizeof(shstrtab);
-
-    const size_t text_size = stack_size(translator.code);
-
-    // with section headers info
-    // Elf64_Ehdr elf_header =
-    // {
-    //     .e_ident = {ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3, ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_SYSV, 0, 0, 0, 0, 0, 0, 0, 0},
-    //     .e_type = ET_EXEC,
-    //     .e_machine = EM_X86_64,
-    //     .e_version = EV_CURRENT,
-    //     .e_entry = entry_addr,
-    //     .e_phoff = sizeof(Elf64_Ehdr),              
-    //     .e_shoff = align + text_size + shstrtab_size + align - (text_size + shstrtab_size) % align,
-    //     .e_flags = 0,
-    //     .e_ehsize = sizeof(Elf64_Ehdr),
-    //     .e_phentsize = sizeof(Elf64_Phdr),
-    //     .e_phnum = 2,
-    //     .e_shentsize = sizeof(Elf64_Shdr),
-    //     .e_shnum = 3,
-    //     .e_shstrndx = 1,
-    // }; 
 
     Elf64_Ehdr elf_header =
     {
@@ -254,14 +234,14 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
         .e_version = EV_CURRENT,
         .e_entry = entry_addr,
         .e_phoff = sizeof(Elf64_Ehdr),              
-        .e_shoff = 0, //align + text_size + align - text_size % align
+        .e_shoff = align + text_size + shstrtab_size + align - (text_size + shstrtab_size) % align,
         .e_flags = 0,
         .e_ehsize = sizeof(Elf64_Ehdr),
         .e_phentsize = sizeof(Elf64_Phdr),
         .e_phnum = 2,
-        .e_shentsize = 0, //sizeof(Elf64_Shdr)
-        .e_shnum = 0, //3
-        .e_shstrndx = 0, //1
+        .e_shentsize = sizeof(Elf64_Shdr),
+        .e_shnum = 3,
+        .e_shstrndx = 1,
     }; 
 
     Elf64_Phdr elf_prog_header_text =
@@ -276,51 +256,51 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
         .p_align = align,
     };
 
-    // const size_t headers_size = sizeof(Elf64_Ehdr) + sizeof(Elf64_Phdr) + 3*sizeof(Elf64_Shdr); 
+    Elf64_Shdr section_headers[] = {
+        // Null section
+        {
+            .sh_name = 0,
+            .sh_type = SHT_NULL,
+            .sh_flags = 0,
+            .sh_addr = 0,
+            .sh_offset = 0,
+            .sh_size = 0,
+            .sh_link = SHN_UNDEF,
+            .sh_info = 0,
+            .sh_addralign = 0,
+            .sh_entsize = 0
+        },
+        
+        // .shstrtab
+        {
+            .sh_name = 1,
+            .sh_type = SHT_STRTAB,
+            .sh_flags = SHF_STRINGS,
+            .sh_addr = 0,
+            .sh_offset = elf_header.e_shoff - shstrtab_size,
+            .sh_size = shstrtab_size,
+            .sh_link = 0,
+            .sh_info = 0,
+            .sh_addralign = 1,
+            .sh_entsize = 0
+        },
+        
+        // .text
+        {
+            .sh_name = 11,
+            .sh_type = SHT_PROGBITS,
+            .sh_flags = SHF_ALLOC | SHF_EXECINSTR,
+            .sh_addr = entry_addr,
+            .sh_offset = align,
+            .sh_size = text_size,
+            .sh_link = 0,
+            .sh_info = 0,
+            .sh_addralign = align,
+            .sh_entsize = 0
+        }
+    };
 
-    // Elf64_Shdr section_headers[] = {
-    //     // Null section
-    //     {
-    //         .sh_name = 0,
-    //         .sh_type = SHT_NULL,
-    //         .sh_flags = 0,
-    //         .sh_addr = 0,
-    //         .sh_offset = 0,
-    //         .sh_size = 0,
-    //         .sh_link = SHN_UNDEF,
-    //         .sh_info = 0,
-    //         .sh_addralign = 0,
-    //         .sh_entsize = 0
-    //     },
-        
-    //     // .shstrtab
-    //     {
-    //         .sh_name = 1,
-    //         .sh_type = SHT_STRTAB,
-    //         .sh_flags = SHF_STRINGS,
-    //         .sh_addr = 0,
-    //         .sh_offset = elf_header.e_shoff + sizeof(Elf64_Shdr),
-    //         .sh_size = shstrtab_size,
-    //         .sh_link = 0,
-    //         .sh_info = 0,
-    //         .sh_addralign = 1,
-    //         .sh_entsize = 0
-    //     },
-        
-    //     // .text
-    //     {
-    //         .sh_name = 11,
-    //         .sh_type = SHT_PROGBITS,
-    //         .sh_flags = SHF_ALLOC | SHF_EXECINSTR,
-    //         .sh_addr = entry_addr,
-    //         .sh_offset = align,
-    //         .sh_size = text_size,
-    //         .sh_link = 0,
-    //         .sh_info = 0,
-    //         .sh_addralign = align,
-    //         .sh_entsize = 0
-    //     }
-    // };
+    const size_t section_headers_size = sizeof(section_headers) / sizeof(*section_headers);
 
     if(fwrite(&elf_header, sizeof(elf_header), 1, out) != 1)
     {
@@ -356,65 +336,40 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
         return TRANSLATION_ERROR_STANDARD_ERRNO;
     }
 
+    const size_t second_align_zero_cnt = elf_header.e_shoff - align - text_size - shstrtab_size;
+
+    if(fwrite(align_zero_arr, sizeof(*align_zero_arr), second_align_zero_cnt, out) 
+       != second_align_zero_cnt)
+    {
+        translator_dtor_(&translator);
+        perror("Can't fwrite second align_zero_arr in out");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
     free(align_zero_arr);
 
+    if(fwrite(shstrtab, sizeof(*shstrtab), shstrtab_size, out) != shstrtab_size)
+    {
+        translator_dtor_(&translator);
+        perror("Can't fwrite shstrtab in out");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
 
-
-    // const size_t section_headers_size = 3;
-
-    // if (!memcpy(stack_begin(translator.code), &elf_header, sizeof(elf_header)))
-    // {
-    //     translator_dtor_(&translator);
-    //     perror("Can't memcpy elf_header in translator.code");
-    //     return TRANSLATION_ERROR_STANDARD_ERRNO;
-    // }
-
-    // if (!memcpy(
-    //         (uint8_t*)stack_begin(translator.code) + sizeof(elf_header), 
-    //         &elf_prog_header_text, 
-    //         sizeof(elf_prog_header_text)
-    //     ))
-    // {
-    //     translator_dtor_(&translator);
-    //     perror("Can't memcpy elf_prog_header_text in translator.code");
-    //     return TRANSLATION_ERROR_STANDARD_ERRNO;
-    // }
-
-    // for (size_t section_header_ind = 0; section_header_ind < section_headers_size; ++section_header_ind)
-    // {
-    //     if (!memcpy(
-    //             (uint8_t*)stack_begin(translator.code) 
-    //                 + sizeof(elf_header) 
-    //                 + sizeof(elf_prog_header_text) 
-    //                 + section_header_ind * sizeof(section_headers[section_header_ind]), 
-    //             &section_headers[section_header_ind], 
-    //             sizeof(section_headers[section_header_ind])
-    //         ))
-    //     {
-    //         translator_dtor_(&translator);
-    //         perror("Can't memcpy section_header in translator.code");
-    //         return TRANSLATION_ERROR_STANDARD_ERRNO;
-    //     }
-    // }
-
-    // if (!memcpy(
-    //         (uint8_t*)stack_begin(translator.code) + headers_size, 
-    //         shstrtab, 
-    //         shstrtab_size
-    //     ))
-    // {
-    //     translator_dtor_(&translator);
-    //     perror("Can't memcpy shstrtab in translator.code");
-    //     return TRANSLATION_ERROR_STANDARD_ERRNO;
-    // }
-
-    // if (fwrite(stack_begin(translator.code), sizeof(uint8_t), stack_size(translator.code), out)
-    //     < stack_size(translator.code))
-    // {
-    //     translator_dtor_(&translator);
-    //     perror("Can't fwrite code in output file");
-    //     return TRANSLATION_ERROR_STANDARD_ERRNO;
-    // }
+    for (size_t section_header_ind = 0; section_header_ind < section_headers_size; ++section_header_ind)
+    {
+        if(fwrite(
+            &section_headers[section_header_ind], 
+            sizeof(section_headers[section_header_ind]), 
+            1, 
+            out
+           ) != 1
+        )
+        {
+            translator_dtor_(&translator);
+            perror("Can't fwrite section_header in out");
+            return TRANSLATION_ERROR_STANDARD_ERRNO;
+        }
+    }
 
     translator_dtor_(&translator);
 
@@ -458,23 +413,6 @@ static enum TranslationError translate_text_(elf_translator_t* const translator,
 }
 
 #undef IR_OP_BLOCK_HANDLE
-
-// static enum TranslationError translate_data_(elf_translator_t* const translator, FILE* out)
-// {
-//     lassert(!is_invalid_ptr(translator), "");
-//     lassert(!is_invalid_ptr(out), "");
-//     for (uint8_t num = 0; num <= 0x0F; ++num)
-//     {
-//         WRITE_BYTE_(num);
-//     }
-//     const uint8_t input_buffer_size = 32;
-//     WRITE_BYTE_(input_buffer_size);
-//     for (uint8_t ind = 0; ind < input_buffer_size; ++ind)
-//     {
-//         WRITE_BYTE_(0);
-//     }
-//     return TRANSLATION_ERROR_SUCCESS;
-// }
 
 
 static enum TranslationError translate_CALL_FUNCTION(elf_translator_t* const translator,  FILE* out)
