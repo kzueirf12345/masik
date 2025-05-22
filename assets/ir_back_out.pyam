@@ -5,11 +5,134 @@ RingRing(tmp0, main)	 # call main
 
 	Bobb(tmp1, hlt, 1)	 # System function call: "hlt"
 
-Gyat(main, 0, 0)	 # implement main
-	Gnoming(tmp2, 228 )	 # Assigning number to tmp
-	Gnoming(arg0, tmp2)	 # Assigning tmp to arg
+Gyat(main, 0, 3)	 # implement main
+	Gnoming(tmp2, 10 )	 # Assigning number to tmp
+	Gnoming(var0, tmp2)	 # Variable: 
+	Gnoming(tmp3, var0)	 # 
+	Gnoming(arg0, tmp3)	 # Assigning tmp to arg
 
-	Bobb(tmp3, out, 1)	 # System function call: "out"
-	Gnoming(tmp4, 0 )	 # Assigning number to tmp
+	Bobb(tmp4, out, 1)	 # System function call: "out"
+	Gnoming(tmp5, 0 )	 # Assigning number to tmp
+	Gnoming(var1, tmp5)	 # Variable: 
 
-	Cherepovec(tmp4)	 # Return with ret val in tmp4
+Viperr(label0)	 # start condition WHILE
+	Gnoming(tmp6, var1)	 # 
+	Gnoming(tmp7, var0)	 # 
+	Digging(tmp8, 7, tmp6, tmp7)	 # IR_OP_TYPE_LESS
+
+Frog(label1, tmp8)	 # second check WHILE condition, jmp to body
+Frog(label2, 1)	 # jmp to end
+
+Viperr(label1)	 # start body WHILE
+	Gnoming(tmp9, var1)	 # 
+	Gnoming(arg0, tmp9)	 # Assigning tmp to arg
+
+RingRing(tmp10, func_3_1)	 # 
+
+	Gnoming(var2, tmp10)	 # Variable: 
+	Gnoming(tmp11, var2)	 # 
+	Gnoming(arg0, tmp11)	 # Assigning tmp to arg
+
+	Bobb(tmp12, out, 1)	 # System function call: "out"
+	Gnoming(tmp13, 1 )	 # Assigning number to tmp
+	Gnoming(tmp14, var1)	 # 
+	Digging(tmp15, 1, tmp14, tmp13)	 # IR_OP_TYPE_SUM
+
+	Gnoming(var1, tmp15)	 # Variable: 
+Frog(label0, 1)	 # jump to condition WHILE
+
+Viperr(label2)	 # end WHILE
+	Gnoming(tmp16, 0 )	 # Assigning number to tmp
+
+	Cherepovec(tmp16)	 # Return with ret val in tmp16
+
+Gyat(func_3_1, 1, 1)	 # 
+	Gnoming(var0, arg0)	 # Variable: 
+	Gnoming(tmp17, var0)	 # 
+	Gnoming(tmp18, 1 )	 # Assigning number to tmp
+	Digging(tmp19, 5, tmp17, tmp18)	 # IR_OP_TYPE_EQ
+
+Frog(label4, tmp19)	 # check IF condition, jmp after else
+Frog(label3, 1)	 # jmp to else in IF
+
+Viperr(label4)	 # label not else in IF
+	Gnoming(tmp20, 1 )	 # Assigning number to tmp
+
+	Cherepovec(tmp20)	 # Return with ret val in tmp20
+
+Viperr(label3)	 # label else for IF
+	Gnoming(tmp21, var0)	 # 
+	Gnoming(tmp22, 0 )	 # Assigning number to tmp
+	Digging(tmp23, 5, tmp21, tmp22)	 # IR_OP_TYPE_EQ
+
+Frog(label6, tmp23)	 # check IF condition, jmp after else
+Frog(label5, 1)	 # jmp to else in IF
+
+Viperr(label6)	 # label not else in IF
+	Gnoming(tmp24, 1 )	 # Assigning number to tmp
+
+	Cherepovec(tmp24)	 # Return with ret val in tmp24
+
+Viperr(label5)	 # label else for IF
+	Gnoming(tmp25, var0)	 # 
+	Gnoming(tmp26, 1 )	 # Assigning number to tmp
+	Digging(tmp27, 2, tmp25, tmp26)	 # IR_OP_TYPE_SUB
+
+	Gnoming(arg0, tmp27)	 # Assigning tmp to arg
+
+RingRing(tmp28, func_3_1)	 # 
+
+	Gnoming(tmp29, var0)	 # 
+	Digging(tmp30, 3, tmp28, tmp29)	 # IR_OP_TYPE_MUL
+
+
+	Cherepovec(tmp30)	 # Return with ret val in tmp30
+
+Gyat(func_5_1, 1, 1)	 # 
+	Gnoming(var0, arg0)	 # Variable: 
+	Gnoming(tmp31, var0)	 # 
+	Gnoming(tmp32, 1 )	 # Assigning number to tmp
+	Digging(tmp33, 5, tmp31, tmp32)	 # IR_OP_TYPE_EQ
+
+Frog(label8, tmp33)	 # check IF condition, jmp after else
+Frog(label7, 1)	 # jmp to else in IF
+
+Viperr(label8)	 # label not else in IF
+	Gnoming(tmp34, 1 )	 # Assigning number to tmp
+
+	Cherepovec(tmp34)	 # Return with ret val in tmp34
+
+Viperr(label7)	 # label else for IF
+	Gnoming(tmp35, var0)	 # 
+	Gnoming(tmp36, 0 )	 # Assigning number to tmp
+	Digging(tmp37, 5, tmp35, tmp36)	 # IR_OP_TYPE_EQ
+
+Frog(label10, tmp37)	 # check IF condition, jmp after else
+Frog(label9, 1)	 # jmp to else in IF
+
+Viperr(label10)	 # label not else in IF
+	Gnoming(tmp38, 0 )	 # Assigning number to tmp
+
+	Cherepovec(tmp38)	 # Return with ret val in tmp38
+
+Viperr(label9)	 # label else for IF
+	Gnoming(tmp39, var0)	 # 
+	Gnoming(tmp40, 1 )	 # Assigning number to tmp
+	Digging(tmp41, 2, tmp39, tmp40)	 # IR_OP_TYPE_SUB
+
+	Gnoming(arg0, tmp41)	 # Assigning tmp to arg
+
+RingRing(tmp42, func_5_1)	 # 
+
+	Gnoming(tmp43, var0)	 # 
+	Gnoming(tmp44, 2 )	 # Assigning number to tmp
+	Digging(tmp45, 2, tmp43, tmp44)	 # IR_OP_TYPE_SUB
+
+	Gnoming(arg0, tmp45)	 # Assigning tmp to arg
+
+RingRing(tmp46, func_5_1)	 # 
+
+	Digging(tmp47, 1, tmp42, tmp46)	 # IR_OP_TYPE_SUM
+
+
+	Cherepovec(tmp47)	 # Return with ret val in tmp47

@@ -98,6 +98,9 @@ enum TranslationError labels_processing(elf_translator_t* const translator)
         
         labels_val_t* labels_val = smash_map_get_val(&translator->labels_map, label_key);
 
+        // fprintf(stderr, RED_TEXT("labels_name: %s\n"), label_key->name);
+        // fprintf(stderr, RED_TEXT("stack_size: %zu\n"), stack_size(labels_val->insert_addrs));
+
         for (size_t insert_addr_ind = 0; insert_addr_ind < stack_size(labels_val->insert_addrs); ++insert_addr_ind)
         {
             size_t* insert_addr = stack_get(labels_val->insert_addrs, insert_addr_ind);

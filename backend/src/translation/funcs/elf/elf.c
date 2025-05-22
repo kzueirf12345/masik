@@ -209,17 +209,9 @@ static enum TranslationError translate_CALL_FUNCTION(elf_translator_t* const tra
         return TRANSLATION_ERROR_STANDARD_ERRNO;
     }
 
-    const labels_val_t* labels_val = smash_map_get_val(&translator->labels_map, &func);
-
-    if (!labels_val)
-    {    
-        TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 1));
-        TRANSLATION_ERROR_HANDLE(write_call_addr(translator, 0));
-    }
-    else
-    {
-        TRANSLATION_ERROR_HANDLE(write_call_addr(translator, labels_val->label_addr));
-    }
+    // fprintf(stderr, "func_name: %s\n", func.name);
+    TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 1));
+    TRANSLATION_ERROR_HANDLE(write_call_addr(translator, 0));
 
     TRANSLATION_ERROR_HANDLE(write_push_r(translator, REG_NUM_RAX));
 
@@ -260,17 +252,26 @@ static enum TranslationError translate_COND_JUMP(elf_translator_t* const transla
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    // if (translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
-    // {
-    //     fprintf(out, "mov rbx, %zu\n", block->operand1_num);
-    // }
-    // else
-    // {
-    //     fprintf(out, "pop rbx\n");
-    // }
+    if (translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
+    {
+        TRANSLATION_ERROR_HANDLE(write_mov_r_i(translator, REG_NUM_RBX, translator->cur_block->operand1_num));
+    }
+    else
+    {
+        TRANSLATION_ERROR_HANDLE(write_pop_r(translator, REG_NUM_RBX));
+    }
 
-    // fprintf(out, "test rbx, rbx\n");
-    // fprintf(out, "jne %s\n\n", block->label_str);
+    TRANSLATION_ERROR_HANDLE(write_test_r_r(translator, REG_NUM_RBX, REG_NUM_RBX));
+
+    label_t func = {};
+    if (!strncpy(func.name, translator->cur_block->label_str, sizeof(func.name)))
+    {
+        perror("Can't strncpy block->label_str in func.name");
+        return TRANSLATION_ERROR_STANDARD_ERRNO;
+    }
+
+    TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 2));
+    TRANSLATION_ERROR_HANDLE(write_cond_jmp(translator, OP_CODE_JNE, 0));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -279,19 +280,25 @@ static enum TranslationError translate_ASSIGNMENT(elf_translator_t* const transl
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    // if (block->ret_type == IR_OPERAND_TYPE_TMP && block->operand1_type == IR_OPERAND_TYPE_VAR)
-    // {
-    //     fprintf(out, "push qword [rbp-%zu]\n", 8 * (block->operand1_num + 1));
-    // }
     if (translator->cur_block->ret_type      == IR_OPERAND_TYPE_TMP 
-     && translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
+     && translator->cur_block->operand1_type == IR_OPERAND_TYPE_VAR)
+    {
+        TRANSLATION_ERROR_HANDLE(
+            write_push_irm(translator, REG_NUM_RBP, -8 * (translator->cur_block->operand1_num + 1))
+        );
+    }
+    else if (translator->cur_block->ret_type      == IR_OPERAND_TYPE_TMP 
+          && translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
     {
         TRANSLATION_ERROR_HANDLE(write_push_i(translator, (int64_t)translator->cur_block->operand1_num));
     }
-    // else if (block->ret_type == IR_OPERAND_TYPE_VAR && block->operand1_type == IR_OPERAND_TYPE_TMP)
-    // {
-    //     fprintf(out, "pop qword [rbp-%zu]\n", 8 * (block->ret_num + 1));
-    // }
+    else if (translator->cur_block->ret_type      == IR_OPERAND_TYPE_VAR 
+          && translator->cur_block->operand1_type == IR_OPERAND_TYPE_TMP)
+    {
+        TRANSLATION_ERROR_HANDLE(
+            write_pop_irm(translator, REG_NUM_RBP, -8 * (translator->cur_block->ret_num + 1))
+        );
+    }
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -300,129 +307,84 @@ static enum TranslationError translate_OPERATION(elf_translator_t* const transla
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    // switch(block->operation_num)
-    // {
-    //     case IR_OP_TYPE_SUM:
-    //     {
-    //         fprintf(out, 
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "add rbx, rcx\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_SUB:
-    //     {
-    //         fprintf(out, 
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "sub rbx, rcx\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_MUL:
-    //     {
-    //         fprintf(out, 
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "imul rbx, rcx\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_DIV:
-    //     {
-    //         fprintf(out, 
-    //             "xor rdx, rdx\n"
-    //             "pop rcx\n"
-    //             "pop rax\n"
-    //             "idiv rcx\n"
-    //             "push rax\n"
-    //         );
-            
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_EQ:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "sete bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_NEQ:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "setne bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_LESS:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "setl bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_LESSEQ:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "setle bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_GREAT:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "setg bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_GREATEQ:
-    //     {
-    //         fprintf(out,
-    //             "pop rcx\n"
-    //             "pop rbx\n"
-    //             "cmp rbx, rcx\n"
-    //             "setge bl\n"
-    //             "movzx rbx, bl\n"
-    //             "push rbx\n"
-    //         );
-    //         break;
-    //     }
-    //     case IR_OP_TYPE_INVALID_OPERATION:
-    //     default:
-    //     {
-    //         fprintf(stderr, "Invalid IR_OP_TYPE\n");
-    //         return TRANSLATION_ERROR_INVALID_OP_TYPE;
-    //     }
-    // }
+    TRANSLATION_ERROR_HANDLE(write_pop_r(translator, REG_NUM_RCX));
+    TRANSLATION_ERROR_HANDLE(write_pop_r(translator, REG_NUM_RBX));
+
+    switch(translator->cur_block->operation_num)
+    {
+        case IR_OP_TYPE_SUM:
+        {
+            TRANSLATION_ERROR_HANDLE(write_add_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            break;
+        }
+        case IR_OP_TYPE_SUB:
+        {
+            TRANSLATION_ERROR_HANDLE(write_sub_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            break;
+        }
+        case IR_OP_TYPE_MUL:
+        {
+            TRANSLATION_ERROR_HANDLE(write_imul_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            break;
+        }
+        case IR_OP_TYPE_DIV:
+        {
+            TRANSLATION_ERROR_HANDLE(write_xor_r_r(translator, REG_NUM_RDX, REG_NUM_RDX));
+            TRANSLATION_ERROR_HANDLE(write_mov_r_r(translator, REG_NUM_RAX, REG_NUM_RBX));
+            TRANSLATION_ERROR_HANDLE(write_idiv_r(translator, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_mov_r_r(translator, REG_NUM_RBX, REG_NUM_RAX));
+            break;
+        }
+        case IR_OP_TYPE_EQ:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETE, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
+        }
+        case IR_OP_TYPE_NEQ:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETNE, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
+        }
+        case IR_OP_TYPE_LESS:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETL, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
+        }
+        case IR_OP_TYPE_LESSEQ:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETLE, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
+        }
+        case IR_OP_TYPE_GREAT:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETG, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
+        }
+        case IR_OP_TYPE_GREATEQ:
+        {
+            TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
+            TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETGE, REG_NUM_RBX)); //bl
+            TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+        }
+
+        default:
+        {
+            fprintf(stderr, "Invalid IR_OP_TYPE\n");
+            return TRANSLATION_ERROR_INVALID_OP_TYPE;
+        }
+    }
+
+    TRANSLATION_ERROR_HANDLE(write_push_r(translator, REG_NUM_RBX));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -470,18 +432,8 @@ static enum TranslationError translate_SYSCALL(elf_translator_t* const translato
         return TRANSLATION_ERROR_STANDARD_ERRNO;
     }
 
-    const labels_val_t* labels_val = smash_map_get_val(&translator->labels_map, &func);
-
-    if (!labels_val)
-    {    
-        TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 1));
-        TRANSLATION_ERROR_HANDLE(write_call_addr(translator, 0));
-    }
-    else
-    {
-        TRANSLATION_ERROR_HANDLE(write_call_addr(translator, labels_val->label_addr));
-    }
-
+    TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 1));
+    TRANSLATION_ERROR_HANDLE(write_call_addr(translator, 0));
 
     if (kIR_SYS_CALL_ARRAY[translator->cur_block->operand2_num].HaveRetVal)
     {

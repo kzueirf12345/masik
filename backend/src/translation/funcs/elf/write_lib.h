@@ -47,6 +47,7 @@ enum OpCode
     OP_CODE_PUSH_IRM    = 0xFF,
 
     OP_CODE_POP_R       = 0x58,
+    OP_CODE_POP_IRM     = 0x8F,
 
     OP_CODE_MOV_R_R     = 0x89,
     OP_CODE_MOV_R_IRM   = 0x8B,
@@ -55,8 +56,15 @@ enum OpCode
     // OP_CODE_MOV_R8_IRM  = 0x8A,
 
     OP_CODE_ADD_R_I     = 0x81,
+    OP_CODE_ADD_R_R     = 0x01,
 
     OP_CODE_SUB_R_I     = 0x81,
+    OP_CODE_SUB_R_R     = 0x29,
+
+    OP_CODE_IMUL_R_R_1  = 0x0F,
+    OP_CODE_IMUL_R_R_2  = 0xAF,
+
+    OP_CODE_IDIV_R      = 0xF7,
 
     OP_CODE_RET         = 0xC3,
 
@@ -102,6 +110,23 @@ enum OpCode
     OP_CODE_JPE         = 0x8A,   
     OP_CODE_JPO         = 0x8B,   
     OP_CODE_JS          = 0x88,   
+
+    OP_CODE_TEST_R_R    = 0x85,
+
+    OP_CODE_CMP_R_R     = 0x39,
+
+
+    OP_CODE_PREF_SET    = 0x0F,
+
+    OP_CODE_SETE        = 0x94, 
+    OP_CODE_SETNE       = 0x95, 
+    OP_CODE_SETL        = 0x9C, 
+    OP_CODE_SETLE       = 0x9E, 
+    OP_CODE_SETG        = 0x9F, 
+    OP_CODE_SETGE       = 0x9D, 
+
+    OP_CODE_PREF_MOVZX  = 0x0F,
+    OP_CODE_MOVZX       = 0xB6,
 };
 
 enum OpCodeModRM
@@ -115,6 +140,12 @@ enum OpCodeModRM
     OP_CODE_MOD_MOV_RM_I8   = 0x0,
 
     OP_CODE_MOD_PUSH_IRM    = 0x6,
+
+    OP_CODE_MOD_POP_IRM     = 0x0,
+
+    OP_CODE_MOD_IDIV_R      = 0x7,
+
+    OP_CODE_MOD_SET         = 0x0,
 };
 
 enum SIBScale
@@ -149,6 +180,9 @@ enum TranslationError write_push_irm    (elf_translator_t* const translator,
                                         const int64_t imm);
 
 enum TranslationError write_pop_r       (elf_translator_t* const translator, const enum RegNum reg);
+enum TranslationError write_pop_irm     (elf_translator_t* const translator, 
+                                        const enum RegNum reg, 
+                                        const int64_t imm);
 
 enum TranslationError write_mov_r_r     (elf_translator_t* const translator, 
                                         const enum RegNum reg1,
@@ -167,10 +201,22 @@ enum TranslationError write_mov_rm_i8   (elf_translator_t* const translator,
 enum TranslationError write_add_r_i     (elf_translator_t* const translator, 
                                         const enum RegNum reg,
                                         const int64_t imm);
+enum TranslationError write_add_r_r     (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
 
 enum TranslationError write_sub_r_i     (elf_translator_t* const translator, 
                                         const enum RegNum reg,
                                         const int64_t imm);
+enum TranslationError write_sub_r_r     (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
+
+enum TranslationError write_imul_r_r    (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
+
+enum TranslationError write_idiv_r       (elf_translator_t* const translator, const enum RegNum reg);
 
 enum TranslationError write_ret         (elf_translator_t* const translator);
 enum TranslationError write_syscall     (elf_translator_t* const translator);
@@ -182,10 +228,26 @@ enum TranslationError write_xor_r_r     (elf_translator_t* const translator,
 enum TranslationError write_dec_r       (elf_translator_t* const translator, const enum RegNum reg);
 
 
-enum TranslationError write_jmp         (elf_translator_t* const translator, const size_t rel_addr);
+enum TranslationError write_jmp         (elf_translator_t* const translator, const size_t func_addr);
 enum TranslationError write_cond_jmp    (elf_translator_t* const translator, 
                                         const enum OpCode jmp_opcode, 
-                                        const size_t rel_addr);
+                                        const size_t func_addr);
+
+enum TranslationError write_cond_set    (elf_translator_t* const translator, 
+                                        const enum OpCode set_opcode, 
+                                        const enum RegNum reg);
+
+enum TranslationError write_test_r_r    (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
+
+enum TranslationError write_cmp_r_r    (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
+
+enum TranslationError write_movzx      (elf_translator_t* const translator, 
+                                        const enum RegNum reg1,
+                                        const enum RegNum reg2);
 
 
 #endif /*MASIK_BACKEND_SRC_TRANSLATION_FUNCS_ELF_LIB_H*/

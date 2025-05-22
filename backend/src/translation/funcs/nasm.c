@@ -137,35 +137,31 @@ static enum TranslationError translate_OPERATION(const ir_block_t* const block, 
     lassert(!is_invalid_ptr(block), "");
     lassert(!is_invalid_ptr(out), "");
 
+    fprintf(out,
+        "pop rcx\n"
+        "pop rbx\n"
+    );
+
     switch(block->operation_num)
     {
         case IR_OP_TYPE_SUM:
         {
             fprintf(out, 
-                "pop rcx\n"
-                "pop rbx\n"
                 "add rbx, rcx\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_SUB:
         {
             fprintf(out, 
-                "pop rcx\n"
-                "pop rbx\n"
                 "sub rbx, rcx\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_MUL:
         {
             fprintf(out, 
-                "pop rcx\n"
-                "pop rbx\n"
                 "imul rbx, rcx\n"
-                "push rbx\n"
             );
             break;
         }
@@ -173,10 +169,9 @@ static enum TranslationError translate_OPERATION(const ir_block_t* const block, 
         {
             fprintf(out, 
                 "xor rdx, rdx\n"
-                "pop rcx\n"
-                "pop rax\n"
+                "mov rax, rbx\n"
                 "idiv rcx\n"
-                "push rax\n"
+                "mov rbx, rax\n"
             );
             
             break;
@@ -184,82 +179,65 @@ static enum TranslationError translate_OPERATION(const ir_block_t* const block, 
         case IR_OP_TYPE_EQ:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "sete bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_NEQ:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "setne bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_LESS:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "setl bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_LESSEQ:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "setle bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_GREAT:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "setg bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
             break;
         }
         case IR_OP_TYPE_GREATEQ:
         {
             fprintf(out,
-                "pop rcx\n"
-                "pop rbx\n"
                 "cmp rbx, rcx\n"
                 "setge bl\n"
                 "movzx rbx, bl\n"
-                "push rbx\n"
             );
-            break;
         }
-        case IR_OP_TYPE_INVALID_OPERATION:
+
         default:
         {
             fprintf(stderr, "Invalid IR_OP_TYPE\n");
             return TRANSLATION_ERROR_INVALID_OP_TYPE;
         }
     }
+
+    fprintf(out, "push rbx\n");
 
     return TRANSLATION_ERROR_SUCCESS;
 }
