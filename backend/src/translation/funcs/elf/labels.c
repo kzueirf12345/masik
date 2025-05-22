@@ -109,7 +109,14 @@ enum TranslationError labels_processing(elf_translator_t* const translator)
 
             uint8_t* insert_place = stack_get(translator->text, *insert_addr - ENTRY_ADDR_); 
 
-            size_t rel_addr = labels_val->label_addr - *insert_addr - 4;
+            size_t insert_num = (size_t)insert_place[0] 
+                             + ((size_t)insert_place[1] << 8) 
+                             + ((size_t)insert_place[2] << 16) 
+                             + ((size_t)insert_place[3] << 24);
+
+            // fprintf(stderr, "insert_num: %x\n", insert_num);
+
+            size_t rel_addr = labels_val->label_addr - *insert_addr - 4 + insert_num;
 
             if (!memcpy(insert_place, (uint8_t*)&rel_addr, sizeof(uint32_t)))
             {

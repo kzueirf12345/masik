@@ -27,9 +27,9 @@ typedef struct ElfTranslator
     stack_key_t text;
     stack_key_t data;
 
-    size_t HexTable_data_off;
-    size_t InputBufferSize_data_off;
-    size_t InputBuffer_data_off;
+    // size_t HexTable_data_off;
+    // size_t InputBufferSize_data_off;
+    // size_t InputBuffer_data_off;
 
     ir_block_t* cur_block;
 

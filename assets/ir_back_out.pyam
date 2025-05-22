@@ -7,5 +7,9 @@ RingRing(tmp0, main)	 # call main
 
 Gyat(main, 0, 0)	 # implement main
 	Gnoming(tmp2, 228 )	 # Assigning number to tmp
+	Gnoming(arg0, tmp2)	 # Assigning tmp to arg
 
-	Cherepovec(tmp2)	 # Return with ret val in tmp2
+	Bobb(tmp3, out, 1)	 # System function call: "out"
+	Gnoming(tmp4, 0 )	 # Assigning number to tmp
+
+	Cherepovec(tmp4)	 # Return with ret val in tmp4

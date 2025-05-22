@@ -164,6 +164,18 @@ enum TranslationError write_qword_data(elf_translator_t* const translator, const
     return TRANSLATION_ERROR_SUCCESS;
 }
 
+enum TranslationError write_arr_text(elf_translator_t* const translator, const uint8_t* const arr, const size_t size)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    for (size_t num = 0; num < size; ++num)
+    {
+        TRANSLATION_ERROR_HANDLE(write_byte_text(translator, arr[num]));
+    }
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
 static enum TranslationError write_command_(
                                             elf_translator_t* const translator,
                                             const enum OpCode opcode,
@@ -238,7 +250,7 @@ enum TranslationError write_call_addr(elf_translator_t* const translator, const 
             0, 
             0,
             0,
-            (uint64_t)(func_addr ? (ssize_t)func_addr - (ssize_t)translator->cur_addr + 5 : 0),
+            (uint64_t)(func_addr ? (ssize_t)func_addr - ((ssize_t)translator->cur_addr + 5) : 0),
             sizeof(uint32_t)
         )
     );
@@ -290,6 +302,27 @@ enum TranslationError write_push_i(elf_translator_t* const translator, const int
     return TRANSLATION_ERROR_SUCCESS;
 }
 
+enum TranslationError write_push_irm(elf_translator_t* const translator, 
+                                        const enum RegNum reg, 
+                                        const int64_t imm)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            OP_CODE_PUSH_IRM, 
+            REX_W | (reg > 7 ? REX_B : 0),
+            create_modrm_(MOD_RM_OFF4, OP_CODE_MOD_PUSH_IRM, reg),
+            0,
+            (uint64_t)imm,
+            sizeof(uint32_t)
+        )
+    );
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
 //58+ rd
 enum TranslationError write_pop_r(elf_translator_t* const translator, const enum RegNum reg)
 {
@@ -316,6 +349,7 @@ enum TranslationError write_pop_r(elf_translator_t* const translator, const enum
 }
 
 // REX.W + 89 /r
+// MOV r/m64, r64
 enum TranslationError write_mov_r_r(elf_translator_t* const translator, 
                                     const enum RegNum reg1,
                                     const enum RegNum reg2)
@@ -387,6 +421,27 @@ enum TranslationError write_mov_r_i(elf_translator_t* const translator,
     return TRANSLATION_ERROR_SUCCESS;
 }
 
+enum TranslationError write_mov_rm_i8(elf_translator_t* const translator, 
+                                        const enum RegNum reg,
+                                        const int64_t imm)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            OP_CODE_MOV_RM_I8,
+            REX_W | (reg > 7 ? REX_B : 0), 
+            create_modrm_(MOD_RM_OFF0, OP_CODE_MOD_MOV_RM_I8, MOD_RM_USE_SIB),
+            create_sib_(reg),
+            (uint8_t)imm,
+            sizeof(uint8_t)
+        )
+    );
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
 // REX.W + 81 /0 id
 enum TranslationError write_add_r_i(elf_translator_t* const translator, 
                                     const enum RegNum reg,
@@ -399,7 +454,7 @@ enum TranslationError write_add_r_i(elf_translator_t* const translator,
             translator, 
             OP_CODE_ADD_R_I,
             REX_W | (reg > 7 ? REX_B : 0), 
-            create_modrm_(MOD_RM_RR, (const enum RegNum)OP_CODE_MOD_ADD_R_I, reg),
+            create_modrm_(MOD_RM_RR, OP_CODE_MOD_ADD_R_I, reg),
             0,
             (uint64_t)imm,
             sizeof(uint32_t)
@@ -458,6 +513,95 @@ enum TranslationError write_syscall(elf_translator_t* const translator)
 
     TRANSLATION_ERROR_HANDLE(write_byte_text(translator, OP_CODE_SYSCALL1));
     TRANSLATION_ERROR_HANDLE(write_byte_text(translator, OP_CODE_SYSCALL2));
+
+    translator->cur_addr += 2;
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+
+// REX.W + 31 /r
+// XOR r/m64, r64
+enum TranslationError write_xor_r_r(elf_translator_t* const translator, 
+                                    const enum RegNum reg1,
+                                    const enum RegNum reg2)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            OP_CODE_XOR_R_R,
+            REX_W | (reg1 > 7 ? REX_B : 0) | (reg2 > 7 ? REX_R : 0), 
+            create_modrm_(MOD_RM_RR, reg2, reg1), /*reverse its correct*/
+            0,
+            0,
+            0
+        )
+    );
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_dec_r(elf_translator_t* const translator, const enum RegNum reg)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            OP_CODE_DEC_R,
+            REX_W | (reg > 7 ? REX_B : 0), 
+            create_modrm_(MOD_RM_RR, OP_CODE_MOD_DEC_R, reg),
+            0,
+            0,
+            0
+        )
+    );
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_jmp(elf_translator_t* const translator, const size_t rel_addr)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            OP_CODE_JMP, 
+            0, 
+            0,
+            0,
+            (uint64_t)rel_addr,
+            sizeof(uint32_t)
+        )
+    );
+
+    return TRANSLATION_ERROR_SUCCESS;
+}
+
+enum TranslationError write_cond_jmp(elf_translator_t* const translator, 
+                                        const enum OpCode jmp_opcode, 
+                                        const size_t rel_addr)
+{
+    lassert(!is_invalid_ptr(translator), "");
+
+    TRANSLATION_ERROR_HANDLE(write_byte_text(translator, OP_CODE_PREF_JMP));
+
+    ++translator->cur_addr;
+
+    TRANSLATION_ERROR_HANDLE(
+        write_command_(
+            translator, 
+            jmp_opcode, 
+            0, 
+            0,
+            0,
+            (uint64_t)rel_addr,
+            sizeof(uint32_t)
+        )
+    );
 
     return TRANSLATION_ERROR_SUCCESS;
 }

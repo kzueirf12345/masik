@@ -22,6 +22,9 @@ sub rsp, 0 ; rsp = rbp - local_vars_cnt
 push rax ; ret val
 push rbx ; old rbp
 push 228
+call out
+add rsp, 8
+push 0
 pop rax ; save ret val
 pop rbx ; rbp val
 pop rcx ; ret addr
@@ -129,8 +132,13 @@ jmp .Print
 .Convertion:
     xor rdx, rdx                            ; rdx = 0 (in particular edx)
     div r11                                 ; [rax, rdx] = rdx:rax / r11
-    mov dl, byte [HexTable + rdx]           ; dl = HexTable[dl]
-;;; push dl (digit) in stack
+    cmp rdx, 10
+    jb .below_10
+    add rdx, 'A' - 10
+    jmp .push_char
+    .below_10:
+    add rdx, '0'
+    .push_char:
     dec rsp
     mov byte [rsp], dl
 
