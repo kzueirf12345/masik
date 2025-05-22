@@ -7,7 +7,8 @@
 		backend_all backend_build backend_clean backend_rebuild backend_start \
 		splu_all splu_build splu_clean splu_rebuild splu_start \
 		nasm_all nasm_build nasm_clean nasm_rebuild nasm_start \
-		elf_all elf_clean elf_rebuild elf_start
+		elf_all elf_clean elf_rebuild elf_start \
+		midlend2_all midlend2_build midlend2_clean midlend2_rebuild midlend2_start
 
 PROJECT_NAME = masik
 
@@ -51,17 +52,17 @@ endif
 FLAGS += $(ADD_FLAGS)
 
 
-all:  libs_build frontend_all midlend_all  backend_all splu_all nasm_all elf_all
+all:  libs_build frontend_all midlend2_build midlend_all midlend2_start backend_all splu_all nasm_all elf_all
 
-all_elf:   libs_build frontend_all midlend_all backend_all elf_all
-all_nasm:  libs_build frontend_all midlend_all backend_all nasm_all
-all_splu:  libs_build frontend_all midlend_all backend_all splu_all
+all_elf:   libs_build frontend_all midlend2_build midlend_all midlend2_start backend_all elf_all
+all_nasm:  libs_build frontend_all midlend2_build midlend_all midlend2_start backend_all nasm_all
+all_splu:  libs_build frontend_all midlend2_build midlend_all midlend2_start backend_all splu_all
 
-build: libs_build frontend_build midlend_build backend_build splu_build
+build: libs_build frontend_build midlend2_build midlend_build backend_build splu_build
 
-start: frontend_start midlend_start backend_start splu_start nasm_build nasm_start elf_start
+start: frontend_start midlend_start midlend2_start backend_start splu_start nasm_build nasm_start elf_start
 
-rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild splu_rebuild nasm_clean elf_clean
+rebuild: libs_rebuild frontend_rebuild midlend2_rebuild midlend_rebuild backend_rebuild splu_rebuild nasm_clean elf_clean
 
 ELF_FILENAME = masik_elf
 
@@ -128,6 +129,21 @@ midlend_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./midlend/
 
 
+midlend2_all: midlend2_build midlend2_start
+
+midlend2_start:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(MOPTS)" start -C ./libs/PYAM_IR/
+
+midlend2_rebuild:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(MOPTS)" rebuild -C ./libs/PYAM_IR/
+
+midlend2_build:
+	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/PYAM_IR/
+
+midlend2_clean:
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/PYAM_IR/
+
+
 backend_all: backend_build backend_start
 
 backend_start:
@@ -163,18 +179,16 @@ libs_build:
 	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/stack_on_array/ && \
 	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/logger/ && \
 	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./utils/ && \
-	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/hash_table && \
-	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/PYAM_IR
+	 make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./libs/hash_table
 
 libs_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/stack_on_array/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/logger/ && \
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./utils/ && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/hash_table && \
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/PYAM_IR
+	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./libs/hash_table
 
 
-clean: libs_clean frontend_clean midlend_clean backend_clean splu_clean
+clean: libs_clean frontend_clean midlend_clean backend_clean splu_clean nasm_clean elf_clean midlend2_clean
 
 clean_all:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean_all -C ./libs/logger         	&& \

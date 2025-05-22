@@ -56,18 +56,18 @@ CALL :out
 POP R1
 PUSH 0
 POP [1+R1]
-:label0
+:main_label0
 PUSH [1+R1]
 PUSH [0+R1]
 LESS
 PUSH 1
-JE :label1
+JE :main_label1
 
 PUSH 1
 PUSH 1
-JE :label2
+JE :main_label2
 
-:label1
+:main_label1
 PUSH [1+R1]
 POP [R2]
 PUSH R2
@@ -97,9 +97,9 @@ ADD
 POP [1+R1]
 PUSH 1
 PUSH 1
-JE :label0
+JE :main_label0
 
-:label2
+:main_label2
 PUSH 0
 PUSH R1
 POP R2
@@ -122,13 +122,13 @@ PUSH [0+R1]
 PUSH 1
 EQ
 PUSH 1
-JE :label4
+JE :func_3_1_label4
 
 PUSH 1
 PUSH 1
-JE :label3
+JE :func_3_1_label3
 
-:label4
+:func_3_1_label4
 PUSH 1
 PUSH R1
 POP R2
@@ -136,18 +136,18 @@ POP R3
 POP R1
 RET
 
-:label3
+:func_3_1_label3
 PUSH [0+R1]
 PUSH 0
 EQ
 PUSH 1
-JE :label6
+JE :func_3_1_label6
 
 PUSH 1
 PUSH 1
-JE :label5
+JE :func_3_1_label5
 
-:label6
+:func_3_1_label6
 PUSH 1
 PUSH R1
 POP R2
@@ -155,7 +155,7 @@ POP R3
 POP R1
 RET
 
-:label5
+:func_3_1_label5
 PUSH [0+R1]
 PUSH 1
 SUB
@@ -168,82 +168,6 @@ CALL :func_3_1
 PUSH R3
 PUSH [0+R1]
 MUL
-PUSH R1
-POP R2
-POP R3
-POP R1
-RET
-
-
-:func_5_1
-PUSH R1
-PUSH R2
-PUSH 1
-SUB
-POP R1
-PUSH R1
-PUSH 1
-ADD
-POP R2
-PUSH [0+R1]
-PUSH 1
-EQ
-PUSH 1
-JE :label8
-
-PUSH 1
-PUSH 1
-JE :label7
-
-:label8
-PUSH 1
-PUSH R1
-POP R2
-POP R3
-POP R1
-RET
-
-:label7
-PUSH [0+R1]
-PUSH 0
-EQ
-PUSH 1
-JE :label10
-
-PUSH 1
-PUSH 1
-JE :label9
-
-:label10
-PUSH 0
-PUSH R1
-POP R2
-POP R3
-POP R1
-RET
-
-:label9
-PUSH [0+R1]
-PUSH 1
-SUB
-POP [R2]
-PUSH R2
-PUSH 1
-ADD
-POP R2
-CALL :func_5_1
-PUSH R3
-PUSH [0+R1]
-PUSH 2
-SUB
-POP [R2]
-PUSH R2
-PUSH 1
-ADD
-POP R2
-CALL :func_5_1
-PUSH R3
-ADD
 PUSH R1
 POP R2
 POP R3

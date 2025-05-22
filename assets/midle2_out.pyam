@@ -1,0 +1,93 @@
+Gg(0)	 # Number of global vars
+
+RingRing(tmp0, main)	 # Calling function
+
+	Gnoming(arg0, tmp0)	 # Assigning Tmp to Arg
+
+	Bobb(tmp1, hlt, 1)	 # System function call: "hlt"
+
+Gyat(main, 0, 3)	 # Function body
+	Gnoming(tmp2, 0 )	 # Assigning Num to Tmp
+	Gnoming(var0, tmp2)	 # Variable
+
+	Bobb(tmp3, in, 0)	 # System function call: "in"
+	Gnoming(var0, tmp3)	 # Variable
+	Gnoming(tmp4, var0)	 # Assigning Var to Tmp
+	Gnoming(arg0, tmp4)	 # Assigning Tmp to Arg
+
+	Bobb(tmp5, out, 1)	 # System function call: "out"
+	Gnoming(tmp6, 0 )	 # Assigning Num to Tmp
+	Gnoming(var1, tmp6)	 # Variable
+
+Viperr(main_label0)	 # Label
+	Gnoming(tmp7, var1)	 # Assigning Var to Tmp
+	Gnoming(tmp8, var0)	 # Assigning Var to Tmp
+	Digging(tmp9, 7, tmp7, tmp8)	 # Operation
+
+Frog(main_label1, tmp9)	 # Conditional jump
+Frog(main_label2, 1)	 # Jump
+
+Viperr(main_label1)	 # Label
+	Gnoming(tmp10, var1)	 # Assigning Var to Tmp
+	Gnoming(arg0, tmp10)	 # Assigning Tmp to Arg
+
+RingRing(tmp11, func_3_1)	 # Calling function
+
+	Gnoming(var2, tmp11)	 # Variable
+	Gnoming(tmp12, var2)	 # Assigning Var to Tmp
+	Gnoming(arg0, tmp12)	 # Assigning Tmp to Arg
+
+	Bobb(tmp13, out, 1)	 # System function call: "out"
+	Gnoming(tmp14, 1 )	 # Assigning Num to Tmp
+	Gnoming(tmp15, var1)	 # Assigning Var to Tmp
+	Digging(tmp16, 1, tmp15, tmp14)	 # Operation
+
+	Gnoming(var1, tmp16)	 # Variable
+Frog(main_label0, 1)	 # Jump
+
+Viperr(main_label2)	 # Label
+	Gnoming(tmp17, 0 )	 # Assigning Num to Tmp
+
+	Cherepovec(tmp17)	 # Return with ret val in tmp17
+
+Gyat(func_3_1, 1, 1)	 # Function body
+	Gnoming(var0, arg0)	 # Variable
+	Gnoming(tmp18, var0)	 # Assigning Var to Tmp
+	Gnoming(tmp19, 1 )	 # Assigning Num to Tmp
+	Digging(tmp20, 5, tmp18, tmp19)	 # Operation
+
+Frog(func_3_1_label4, tmp20)	 # Conditional jump
+Frog(func_3_1_label3, 1)	 # Jump
+
+Viperr(func_3_1_label4)	 # Label
+	Gnoming(tmp21, 1 )	 # Assigning Num to Tmp
+
+	Cherepovec(tmp21)	 # Return with ret val in tmp21
+
+Viperr(func_3_1_label3)	 # Label
+	Gnoming(tmp22, var0)	 # Assigning Var to Tmp
+	Gnoming(tmp23, 0 )	 # Assigning Num to Tmp
+	Digging(tmp24, 5, tmp22, tmp23)	 # Operation
+
+Frog(func_3_1_label6, tmp24)	 # Conditional jump
+Frog(func_3_1_label5, 1)	 # Jump
+
+Viperr(func_3_1_label6)	 # Label
+	Gnoming(tmp25, 1 )	 # Assigning Num to Tmp
+
+	Cherepovec(tmp25)	 # Return with ret val in tmp25
+
+Viperr(func_3_1_label5)	 # Label
+	Gnoming(tmp26, var0)	 # Assigning Var to Tmp
+	Gnoming(tmp27, 1 )	 # Assigning Num to Tmp
+	Digging(tmp28, 2, tmp26, tmp27)	 # Operation
+
+	Gnoming(arg0, tmp28)	 # Assigning Tmp to Arg
+
+RingRing(tmp29, func_3_1)	 # Calling function
+
+	Gnoming(tmp30, var0)	 # Assigning Var to Tmp
+	Digging(tmp31, 3, tmp29, tmp30)	 # Operation
+
+
+	Cherepovec(tmp31)	 # Return with ret val in tmp31
