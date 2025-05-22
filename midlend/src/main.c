@@ -5,6 +5,9 @@
 #include "flags/flags.h"
 #include "utils/src/tree/funcs/funcs.h"
 #include "modification/modification.h"
+#include "translation/structs.h"
+#include "translation/funcs/funcs.h"
+#include "translation/verification/verification.h"
 
 int init_all(flags_objs_t* const flags_objs, const int argc, char* const * argv);
 int dtor_all(flags_objs_t* const flags_objs);
@@ -30,7 +33,7 @@ int main(const int argc, char* const argv[])
                                                              tree_dtor(&tree);dtor_all(&flags_objs);
     );
 
-    TREE_ERROR_HANDLE(tree_print(tree, flags_objs.out),
+    IR_TRANSLATION_ERROR_HANDLE(translate(&tree, flags_objs.out),
                                                              tree_dtor(&tree);dtor_all(&flags_objs);
     );
 

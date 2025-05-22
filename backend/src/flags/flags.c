@@ -30,7 +30,7 @@ enum FlagsError flags_objs_ctor(flags_objs_t* const flags_objs)
         return FLAGS_ERROR_SUCCESS;
     }
 
-    if (!strncpy(flags_objs->in_filename, "../assets/ir_back_out.pyam", FILENAME_MAX))
+    if (!strncpy(flags_objs->in_filename, "../assets/midle_out.pyam", FILENAME_MAX))
     {
         perror("Can't strncpy flags_objs->in_filename");
         return FLAGS_ERROR_SUCCESS;

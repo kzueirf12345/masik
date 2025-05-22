@@ -4,7 +4,6 @@
 		clean_all clean_log clean_out clean_obj clean_deps clean_txt clean_bin \
 		frontend_all frontend_build frontend_clean frontend_rebuild frontend_start \
 		midlend_all midlend_build midlend_clean midlend_rebuild midlend_start\
-		ir_backend_all ir_backend_build ir_backend_clean ir_backend_rebuild ir_backend_start \
 		backend_all backend_build backend_clean backend_rebuild backend_start \
 		splu_all splu_build splu_clean splu_rebuild splu_start \
 		nasm_all nasm_build nasm_clean nasm_rebuild nasm_start \
@@ -52,17 +51,17 @@ endif
 FLAGS += $(ADD_FLAGS)
 
 
-all:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all nasm_all elf_all
+all:  libs_build frontend_all midlend_all  backend_all splu_all nasm_all elf_all
 
-all_elf:   libs_build frontend_all midlend_all ir_backend_all backend_all elf_all
-all_nasm:  libs_build frontend_all midlend_all ir_backend_all backend_all nasm_all
-all_splu:  libs_build frontend_all midlend_all ir_backend_all backend_all splu_all
+all_elf:   libs_build frontend_all midlend_all backend_all elf_all
+all_nasm:  libs_build frontend_all midlend_all backend_all nasm_all
+all_splu:  libs_build frontend_all midlend_all backend_all splu_all
 
-build: libs_build frontend_build midlend_build ir_backend_build backend_build splu_build
+build: libs_build frontend_build midlend_build backend_build splu_build
 
-start: frontend_start midlend_start ir_backend_start backend_start splu_start nasm_build nasm_start elf_start
+start: frontend_start midlend_start backend_start splu_start nasm_build nasm_start elf_start
 
-rebuild: libs_rebuild frontend_rebuild midlend_rebuild ir_backend_rebuild backend_rebuild splu_rebuild nasm_clean elf_clean
+rebuild: libs_rebuild frontend_rebuild midlend_rebuild backend_rebuild splu_rebuild nasm_clean elf_clean
 
 ELF_FILENAME = masik_elf
 
@@ -127,20 +126,6 @@ midlend_build:
 
 midlend_clean:
 	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./midlend/
-
-
-ir_backend_all: ir_backend_build ir_backend_start
-
-ir_backend_start:
-	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) OPTS="$(IOPTS)" start -C ./ir_backend/
-
-ir_backend_rebuild: ir_backend_clean ir_backend_build
-
-ir_backend_build:
-	@make ADD_FLAGS="$(ADD_FLAGS)" FLAGS="$(FLAGS)" DEBUG_=$(DEBUG_) build -C ./ir_backend/
-
-ir_backend_clean:
-	make ADD_FLAGS="$(ADD_FLAGS)" clean -C ./ir_backend/
 
 
 backend_all: backend_build backend_start

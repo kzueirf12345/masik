@@ -43,13 +43,15 @@ endif
 
 FLAGS += $(ADD_FLAGS)
 
-LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils
+LIBS = -lm -L../libs/logger -llogger -L../libs/stack_on_array -lstack -L../utils -lutils \
+	   -L../libs/hash_table -lhash_table -L../libs/PYAM_IR -lpyam_ir
 
 
-DIRS = flags modification
+DIRS = flags modification translation translation/funcs translation/verification
 BUILD_DIRS = $(DIRS:%=$(BUILD_DIR)/%)
 
-SOURCES = main.c flags/flags.c modification/modification.c
+SOURCES = main.c flags/flags.c modification/modification.c translation/verification/verification.c \
+		  translation/funcs/map_utils.c translation/funcs/translation.c
 
 SOURCES_REL_PATH = $(SOURCES:%=$(SRC_DIR)/%)
 OBJECTS_REL_PATH = $(SOURCES:%.c=$(BUILD_DIR)/%.o)
