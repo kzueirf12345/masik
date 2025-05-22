@@ -164,11 +164,6 @@ enum TranslationError write_word_text(elf_translator_t* const translator, const 
 enum TranslationError write_dword_text(elf_translator_t* const translator, const uint32_t dword);
 enum TranslationError write_qword_text(elf_translator_t* const translator, const uint64_t qword);
 
-enum TranslationError write_byte_data(elf_translator_t* const translator, const uint8_t byte);
-enum TranslationError write_word_data(elf_translator_t* const translator, const uint16_t word);
-enum TranslationError write_dword_data(elf_translator_t* const translator, const uint32_t dword);
-enum TranslationError write_qword_data(elf_translator_t* const translator, const uint64_t qword);
-
 enum TranslationError write_arr_text(elf_translator_t* const translator, const uint8_t* const arr, const size_t size);
 
 enum TranslationError write_call_addr   (elf_translator_t* const translator, const size_t func_addr);

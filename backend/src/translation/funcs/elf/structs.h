@@ -25,11 +25,6 @@ typedef struct LabelsVal
 typedef struct ElfTranslator
 {
     stack_key_t text;
-    stack_key_t data;
-
-    // size_t HexTable_data_off;
-    // size_t InputBufferSize_data_off;
-    // size_t InputBuffer_data_off;
 
     ir_block_t* cur_block;
 
@@ -42,14 +37,12 @@ typedef struct ElfHeaders
 {
     Elf64_Ehdr ehdr;
     Elf64_Phdr phdr_text;
-    Elf64_Phdr phdr_data;
 
     const char* shstrtab;
     size_t shstrtab_size;
     Elf64_Shdr shdr_zero;
     Elf64_Shdr shdr_shstrtab;
     Elf64_Shdr shdr_text;
-    Elf64_Shdr shdr_data;
 } elf_headers_t;
 
 #endif /*MASIK_BACKEND_SRC_TRANSLATION_STRUCTS_H*/

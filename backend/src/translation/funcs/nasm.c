@@ -26,11 +26,7 @@ enum TranslationError translate_nasm(const fist_t* const fist, FILE* out)
     FIST_VERIFY_ASSERT(fist, NULL);
     lassert(!is_invalid_ptr(out), "");
 
-    fprintf(out, 
-        // "section .data\n"
-        // "HexTable db \"0123456789ABCDEF\"\n"
-        // "InputBufferSize equ 32\n"
-        // "InputBuffer: times InputBufferSize db 0\n"
+    fprintf(out,
         "section .text\n"
         "global _start\n\n"
     );
@@ -228,8 +224,10 @@ static enum TranslationError translate_OPERATION(const ir_block_t* const block, 
                 "setge bl\n"
                 "movzx rbx, bl\n"
             );
+            break;
         }
 
+        case IR_OP_TYPE_INVALID_OPERATION:
         default:
         {
             fprintf(stderr, "Invalid IR_OP_TYPE\n");

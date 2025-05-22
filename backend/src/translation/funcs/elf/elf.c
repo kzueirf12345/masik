@@ -24,7 +24,6 @@
         }                                                                                           \
     } while(0)
 
-#define STACK_DATA_BEGIN_CAPACITY_ 128
 #define STACK_CODE_BEGIN_CAPACITY_ 5000
 #define SMASH_MAP_SIZE_ 101
 static enum TranslationError translator_ctor_(elf_translator_t* const translator)
@@ -44,7 +43,6 @@ static enum TranslationError translator_ctor_(elf_translator_t* const translator
     );
 
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->text, sizeof(uint8_t), STACK_CODE_BEGIN_CAPACITY_));
-    STACK_ERROR_HANDLE_(STACK_CTOR(&translator->data, sizeof(uint8_t), STACK_DATA_BEGIN_CAPACITY_));
 
     STACK_ERROR_HANDLE_(STACK_CTOR(&translator->labels_stack, sizeof(label_t), 1));
 
@@ -56,7 +54,6 @@ static enum TranslationError translator_ctor_(elf_translator_t* const translator
 }
 #undef SMASH_MAP_SIZE_
 #undef STACK_CODE_BEGIN_CAPACITY_
-#undef STACK_DATA_BEGIN_CAPACITY_
 
 static void translator_dtor_(elf_translator_t* const translator)
 {
@@ -75,11 +72,9 @@ static void translator_dtor_(elf_translator_t* const translator)
     
     stack_dtor(&translator->labels_stack);
     stack_dtor(&translator->text);
-    stack_dtor(&translator->data);
 }
 
 static enum TranslationError translate_text_(elf_translator_t* const translator, const fist_t* const fist);
-static enum TranslationError translate_data_(elf_translator_t* const translator);
 
 static enum TranslationError translate_syscall_hlt_(elf_translator_t* const translator);
 static enum TranslationError translate_syscall_in_(elf_translator_t* const translator);
@@ -107,11 +102,6 @@ enum TranslationError translate_elf(const fist_t* const fist, FILE* out)
 
     TRANSLATION_ERROR_HANDLE(
         translate_text_(&translator, fist),
-        translator_dtor_(&translator);
-    );
-
-    TRANSLATION_ERROR_HANDLE(
-        translate_data_(&translator),
         translator_dtor_(&translator);
     );
 
@@ -172,26 +162,6 @@ static enum TranslationError translate_text_(elf_translator_t* const translator,
 
 #undef IR_OP_BLOCK_HANDLE
 
-#define INPUT_BUFFER_SIZE_ 32u
-static enum TranslationError translate_data_(elf_translator_t* const translator)
-{
-    lassert(!is_invalid_ptr(translator), "");
-
-    // label_t func = {.name = "HexTable"};
-    // TRANSLATION_ERROR_HANDLE(add_label(translator, &func));
-    
-    TRANSLATION_ERROR_HANDLE(write_dword_data(translator, INPUT_BUFFER_SIZE_));
-
-    static_assert(INPUT_BUFFER_SIZE_ % 4 == 0, "");
-    for (size_t num = 0; num < INPUT_BUFFER_SIZE_ / 4; ++num)
-    {
-        TRANSLATION_ERROR_HANDLE(write_dword_data(translator, 0ul));
-    }
-
-    return TRANSLATION_ERROR_SUCCESS;
-}
-#undef INPUT_BUFFER_SIZE_
-
 
 static enum TranslationError translate_CALL_FUNCTION(elf_translator_t* const translator)
 {
@@ -249,7 +219,7 @@ static enum TranslationError translate_COND_JUMP(elf_translator_t* const transla
 
     if (translator->cur_block->operand1_type == IR_OPERAND_TYPE_NUM)
     {
-        TRANSLATION_ERROR_HANDLE(write_mov_r_i(translator, REG_NUM_RBX, translator->cur_block->operand1_num));
+        TRANSLATION_ERROR_HANDLE(write_mov_r_i(translator, REG_NUM_RBX, (int64_t)translator->cur_block->operand1_num));
     }
     else
     {
@@ -279,7 +249,7 @@ static enum TranslationError translate_ASSIGNMENT(elf_translator_t* const transl
      && translator->cur_block->operand1_type == IR_OPERAND_TYPE_VAR)
     {
         TRANSLATION_ERROR_HANDLE(
-            write_push_irm(translator, REG_NUM_RBP, -8 * (translator->cur_block->operand1_num + 1))
+            write_push_irm(translator, REG_NUM_RBP, (int64_t)(-8 * ((int64_t)translator->cur_block->operand1_num + 1)))
         );
     }
     else if (translator->cur_block->ret_type      == IR_OPERAND_TYPE_TMP 
@@ -291,7 +261,7 @@ static enum TranslationError translate_ASSIGNMENT(elf_translator_t* const transl
           && translator->cur_block->operand1_type == IR_OPERAND_TYPE_TMP)
     {
         TRANSLATION_ERROR_HANDLE(
-            write_pop_irm(translator, REG_NUM_RBP, -8 * (translator->cur_block->ret_num + 1))
+            write_pop_irm(translator, REG_NUM_RBP, (int64_t)(-8 * ((int64_t)translator->cur_block->ret_num + 1)))
         );
     }
 
@@ -370,8 +340,10 @@ static enum TranslationError translate_OPERATION(elf_translator_t* const transla
             TRANSLATION_ERROR_HANDLE(write_cmp_r_r(translator, REG_NUM_RBX, REG_NUM_RCX));
             TRANSLATION_ERROR_HANDLE(write_cond_set(translator, OP_CODE_SETGE, REG_NUM_RBX)); //bl
             TRANSLATION_ERROR_HANDLE(write_movzx(translator, REG_NUM_RBX, REG_NUM_RBX)); // second reg - bl
+            break;
         }
 
+        case IR_OP_TYPE_INVALID_OPERATION:
         default:
         {
             fprintf(stderr, "Invalid IR_OP_TYPE\n");

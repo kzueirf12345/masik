@@ -127,43 +127,6 @@ enum TranslationError write_qword_text(elf_translator_t* const translator, const
     return TRANSLATION_ERROR_SUCCESS;
 }
 
-
-enum TranslationError write_byte_data(elf_translator_t* const translator, const uint8_t byte)
-{
-    lassert(!is_invalid_ptr(translator), "");
-
-    TRANSLATION_ERROR_HANDLE(write_byte_(translator->data, byte));
-
-    return TRANSLATION_ERROR_SUCCESS;
-}
-
-enum TranslationError write_word_data(elf_translator_t* const translator, const uint16_t word)
-{
-    lassert(!is_invalid_ptr(translator), "");
-
-    TRANSLATION_ERROR_HANDLE(write_word_(translator->data, word));
-
-    return TRANSLATION_ERROR_SUCCESS;
-}
-
-enum TranslationError write_dword_data(elf_translator_t* const translator, const uint32_t dword)
-{
-    lassert(!is_invalid_ptr(translator), "");
-
-    TRANSLATION_ERROR_HANDLE(write_dword_(translator->data, dword));
-
-    return TRANSLATION_ERROR_SUCCESS;
-}
-
-enum TranslationError write_qword_data(elf_translator_t* const translator, const uint64_t qword)
-{
-    lassert(!is_invalid_ptr(translator), "");
-
-    TRANSLATION_ERROR_HANDLE(write_qword_(translator->data, qword));
-
-    return TRANSLATION_ERROR_SUCCESS;
-}
-
 enum TranslationError write_arr_text(elf_translator_t* const translator, const uint8_t* const arr, const size_t size)
 {
     lassert(!is_invalid_ptr(translator), "");
@@ -313,7 +276,7 @@ enum TranslationError write_push_irm(elf_translator_t* const translator,
             translator, 
             OP_CODE_PUSH_IRM, 
             REX_W | (reg > 7 ? REX_B : 0),
-            create_modrm_(MOD_RM_OFF4, OP_CODE_MOD_PUSH_IRM, reg),
+            create_modrm_(MOD_RM_OFF4, (const enum RegNum)OP_CODE_MOD_PUSH_IRM, reg),
             0,
             (uint64_t)imm,
             sizeof(uint32_t)
@@ -359,7 +322,7 @@ enum TranslationError write_pop_irm     (elf_translator_t* const translator,
             translator, 
             OP_CODE_POP_IRM, 
             REX_W | (reg > 7 ? REX_B : 0),
-            create_modrm_(MOD_RM_OFF4, OP_CODE_MOD_POP_IRM, reg),
+            create_modrm_(MOD_RM_OFF4, (const enum RegNum)OP_CODE_MOD_POP_IRM, reg),
             0,
             (uint64_t)imm,
             sizeof(uint32_t)
@@ -453,7 +416,7 @@ enum TranslationError write_mov_rm_i8(elf_translator_t* const translator,
             translator, 
             OP_CODE_MOV_RM_I8,
             REX_W | (reg > 7 ? REX_B : 0), 
-            create_modrm_(MOD_RM_OFF0, OP_CODE_MOD_MOV_RM_I8, MOD_RM_USE_SIB),
+            create_modrm_(MOD_RM_OFF0, (const enum RegNum)OP_CODE_MOD_MOV_RM_I8, MOD_RM_USE_SIB),
             create_sib_(reg),
             (uint8_t)imm,
             sizeof(uint8_t)
@@ -475,7 +438,7 @@ enum TranslationError write_add_r_i(elf_translator_t* const translator,
             translator, 
             OP_CODE_ADD_R_I,
             REX_W | (reg > 7 ? REX_B : 0), 
-            create_modrm_(MOD_RM_RR, OP_CODE_MOD_ADD_R_I, reg),
+            create_modrm_(MOD_RM_RR, (const enum RegNum)OP_CODE_MOD_ADD_R_I, reg),
             0,
             (uint64_t)imm,
             sizeof(uint32_t)
@@ -595,7 +558,7 @@ enum TranslationError write_idiv_r(elf_translator_t* const translator, const enu
             translator, 
             OP_CODE_IDIV_R,
             REX_W | (reg > 7 ? REX_B : 0), 
-            create_modrm_(MOD_RM_RR, OP_CODE_MOD_IDIV_R, reg),
+            create_modrm_(MOD_RM_RR, (const enum RegNum)OP_CODE_MOD_IDIV_R, reg),
             0,
             0,
             0
@@ -671,7 +634,7 @@ enum TranslationError write_dec_r(elf_translator_t* const translator, const enum
             translator, 
             OP_CODE_DEC_R,
             REX_W | (reg > 7 ? REX_B : 0), 
-            create_modrm_(MOD_RM_RR, OP_CODE_MOD_DEC_R, reg),
+            create_modrm_(MOD_RM_RR, (const enum RegNum)OP_CODE_MOD_DEC_R, reg),
             0,
             0,
             0
@@ -740,7 +703,7 @@ enum TranslationError write_cond_set(elf_translator_t* const translator,
             translator, 
             set_opcode, 
             0, 
-            create_modrm_(MOD_RM_RR, OP_CODE_MOD_SET, reg),
+            create_modrm_(MOD_RM_RR, (const enum RegNum)OP_CODE_MOD_SET, reg),
             0,
             0,
             0
