@@ -179,18 +179,13 @@ static enum TranslationError translate_data_(elf_translator_t* const translator)
 
     // label_t func = {.name = "HexTable"};
     // TRANSLATION_ERROR_HANDLE(add_label(translator, &func));
-
-    for (uint8_t num = 0; num <= 0xF; ++num)
-    {
-        TRANSLATION_ERROR_HANDLE(write_byte_data(translator, num));
-    }
     
-    TRANSLATION_ERROR_HANDLE(write_word_data(translator, INPUT_BUFFER_SIZE_));
+    TRANSLATION_ERROR_HANDLE(write_dword_data(translator, INPUT_BUFFER_SIZE_));
 
-    static_assert(INPUT_BUFFER_SIZE_ % 8 == 0, "");
-    for (size_t num = 0; num < INPUT_BUFFER_SIZE_ / 8; ++num)
+    static_assert(INPUT_BUFFER_SIZE_ % 4 == 0, "");
+    for (size_t num = 0; num < INPUT_BUFFER_SIZE_ / 4; ++num)
     {
-        TRANSLATION_ERROR_HANDLE(write_qword_data(translator, 0ull));
+        TRANSLATION_ERROR_HANDLE(write_dword_data(translator, 0ul));
     }
 
     return TRANSLATION_ERROR_SUCCESS;
@@ -435,12 +430,12 @@ static enum TranslationError translate_SYSCALL(elf_translator_t* const translato
     TRANSLATION_ERROR_HANDLE(add_not_handle_addr(translator, &func, translator->cur_addr + 1));
     TRANSLATION_ERROR_HANDLE(write_call_addr(translator, 0));
 
+    TRANSLATION_ERROR_HANDLE(write_add_r_i(translator, REG_NUM_RSP, 8 * (int64_t)translator->cur_block->operand1_num));
+
     if (kIR_SYS_CALL_ARRAY[translator->cur_block->operand2_num].HaveRetVal)
     {
         TRANSLATION_ERROR_HANDLE(write_push_r(translator, REG_NUM_RAX)); // ret val
     }
-
-    TRANSLATION_ERROR_HANDLE(write_add_r_i(translator, REG_NUM_RSP, 8 * (int64_t)translator->cur_block->operand1_num));
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -471,67 +466,68 @@ static enum TranslationError translate_syscall_in_(elf_translator_t* const trans
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    // fprintf(out,
-    //     ";;; ---------------------------------------------\n"
-    //     ";;; Descript:   read num\n"
-    //     ";;; Entry:      NONE\n"
-    //     ";;; Exit:       rax = read num (0 if error)\n"
-    //     ";;; Destroy:    rcx, rdx, rsi, rdi, r11\n"
-    //     ";;; ---------------------------------------------\n"
-    //     "in:\n"
-    //     "    mov rsi, InputBuffer                       ; rsi - buffer addr\n"
-    //     "    mov rdx, InputBufferSize                   ; rdx - buffer size\n"
-    //     "    mov r10, 10                                ; r10 - base\n"
-    //     "\n"
-    //     "    xor rax, rax                               ; sys_read\n"
-    //     "    xor rdi, rdi                               ; stdin\n"
-    //     "    syscall\n"
-    //     "\n"
-    //     "    test rax, rax                              ; check read result\n"
-    //     "    jle .ExitError\n"
-    //     "\n"
-    //     "    mov rcx, rax                               ; rcx - cnt bytes read\n"
-    //     "    dec rcx                                    ; not handle \\n\n"
-    //     "    xor rax, rax                               ; rax - result num\n"
-    //     "    xor rdi, rdi                               ; rdi - sign flag (0 = positive)\n"
-    //     "\n"
-    //     ";;; check first symbol\n"
-    //     "    mov bl, byte [rsi]\n"
-    //     "    cmp bl, '-'\n"
-    //     "    jne .CheckDigit\n"
-    //     "    inc rdi                                    ; set negative flag\n"
-    //     "    inc rsi                                    ; skip '-'\n"
-    //     "    dec rcx\n"
-    //     "    jz .ExitError                              ; only '-' in input\n"
-    //     "\n"
-    //     ".CheckDigit:\n"
-    //     "    mov bl, byte [rsi]\n"
-    //     "    sub bl, '0'\n"
-    //     "    cmp bl, 9\n"
-    //     "    ja .ExitError                                  ; not a digit\n"
-    //     "\n"
-    //     ".ConvertLoop:\n"
-    //     "    mov bl, byte [rsi]\n"
-    //     "    sub bl, '0'                                ; convert to digit\n"
-    //     "    imul rax, r10                              ; rax *= 10\n"
-    //     "    add rax, rbx                               ; rax += digit\n"
-    //     "\n"
-    //     "    inc rsi                                    ; next char\n"
-    //     "    dec rcx\n"
-    //     "    jnz .ConvertLoop\n"
-    //     "\n"
-    //     ";;; apply sign if needed\n"
-    //     "    test rdi, rdi\n"
-    //     "    jz .ExitSuccess\n"
-    //     "    neg rax\n"
-    //     "\n"
-    //     ".ExitSuccess:\n"
-    //     "    ret\n"
-    //     "\n"
-    //     ".ExitError:\n"
-    //     "    xor rax, rax                               ; return 0 if error\n"
-    //     "    ret\n\n"
-    // );
+    label_t func_out = {.name = "in"};
+
+    TRANSLATION_ERROR_HANDLE(add_label(translator, &func_out));
+
+    uint8_t bytes[] = 
+    {
+        0xba, 0x20, 0x00, 0x00, 0x00,         // mov    $0x20,%edx
+        0x41, 0xba, 0x0a, 0x00, 0x00, 0x00,   // mov    $0xa,%r10d
+        0x48, 0x29, 0xd4,                     // sub    %rdx,%rsp
+        0x48, 0x89, 0xe6,                     // mov    %rsp,%rsi
+        0x48, 0x31, 0xc0,                     // xor    %rax,%rax
+        0x48, 0x31, 0xff,                     // xor    %rdi,%rdi
+        0x0f, 0x05,                           // syscall
+        0x48, 0x85, 0xc0,                     // test   %rax,%rax
+        0x7e, 0x48,                           // jle    4010c0 <in.ExitError>
+
+        0x48, 0x89, 0xc1,                     // mov    %rax,%rcx
+        0x48, 0xff, 0xc9,                     // dec    %rcx
+        0x48, 0x31, 0xc0,                     // xor    %rax,%rax
+        0x48, 0x31, 0xff,                     // xor    %rdi,%rdi
+        0x8a, 0x1e,                           // mov    (%rsi),%bl
+        0x80, 0xfb, 0x2d,                     // cmp    $0x2d,%bl
+        0x75, 0x0b,                           // jne    401096 <in.CheckDigit>
+        0x48, 0xff, 0xc7,                     // inc    %rdi
+        0x48, 0xff, 0xc6,                     // inc    %rsi
+        0x48, 0xff, 0xc9,                     // dec    %rcx
+        0x74, 0x2a,                           // je     4010c0 <in.ExitError>
+
+        // in.CheckDigit:
+        0x8a, 0x1e,                           // mov    (%rsi),%bl
+        0x80, 0xeb, 0x30,                     // sub    $0x30,%bl
+        0x80, 0xfb, 0x09,                     // cmp    $0x9,%bl
+        0x77, 0x20,                           // ja     4010c0 <in.ExitError>
+
+        // in.ConvertLoop:
+        0x8a, 0x1e,                           // mov    (%rsi),%bl
+        0x80, 0xeb, 0x30,                     // sub    $0x30,%bl
+        0x49, 0x0f, 0xaf, 0xc2,               // imul   %r10,%rax
+        0x48, 0x01, 0xd8,                     // add    %rbx,%rax
+        0x48, 0xff, 0xc6,                     // inc    %rsi
+        0x48, 0xff, 0xc9,                     // dec    %rcx
+        0x75, 0xec,                           // jne    4010a0 <in.ConvertLoop>
+
+        0x48, 0x85, 0xff,                     // test   %rdi,%rdi
+        0x74, 0x03,                           // je     4010bc <in.ExitSuccess>
+        0x48, 0xf7, 0xd8,                     // neg    %rax
+
+        // in.ExitSuccess:
+        0x48, 0x01, 0xd4,                     // add    %rdx,%rsp
+        0xc3,                                 // ret
+
+        // in.ExitError:
+        0x48, 0x01, 0xd4,                     // add    %rdx,%rsp
+        0x48, 0x31, 0xc0,                     // xor    %rax,%rax
+        0xc3                                  // ret
+    };
+
+    const size_t bytes_size = sizeof(bytes);
+
+    TRANSLATION_ERROR_HANDLE(write_arr_text(translator, bytes, bytes_size));
+
+    translator->cur_addr += bytes_size;
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -546,8 +542,7 @@ static enum TranslationError translate_syscall_out_(elf_translator_t* const tran
 
     uint8_t bytes[] = 
     {
-        // out:
-        0x48, 0x8b, 0x44, 0x24, 0x08,     // mov    0x8(%rsp),%rax
+        0x48, 0x8b, 0x44, 0x24, 0x08,      // mov    0x8(%rsp),%rax
         0x41, 0xbb, 0x0a, 0x00, 0x00, 0x00, // mov    $0xa,%r11d
         0x48, 0x89, 0xc7,                  // mov    %rax,%rdi
         0x48, 0x31, 0xc9,                  // xor    %rcx,%rcx
@@ -618,49 +613,53 @@ static enum TranslationError translate_syscall_pow_(elf_translator_t* const tran
 {
     lassert(!is_invalid_ptr(translator), "");
 
-    // fprintf(out,
-    //     ";;; ---------------------------------------------\n"
-    //     ";;; Descript:   fast power calculation (x^n)\n"
-    //     ";;; Entry:      first pushed arg  = x (base)\n"
-    //     ";;;             second pushed arg = n (exponent)\n"
-    //     ";;; Exit:       rax = res \n"
-    //     ";;; Destroy:    rcx, rdx\n"
-    //     ";;; ---------------------------------------------\n"
-    //     "pow:\n"
-    //     "    mov rcx, [rsp + 8]                      ; rcx - n\n"
-    //     "    mov rax, [rsp + 16]                     ; rax - x\n"
-    //     "    mov rdx, 1                              ; rdx = 1 - result\n"
-    //     "\n"
-    //     ";;; Проверка особых случаев\n"
-    //     "    test rcx, rcx                           ; n == 0\n"
-    //     "    je .done\n"
-    //     "\n"
-    //     "    cmp rax, 1                              ; x == 1\n"
-    //     "    je .done\n"
-    //     "\n"
-    //     "    test rax, rax                           ; x == 0\n"
-    //     "    je .zero_case\n"
-    //     "\n"
-    //     ".pow_loop:\n"
-    //     "    test rcx, 1                             ; check even\n"
-    //     "    jz .even_power\n"
-    //     "    imul rdx, rax                           ; res *= x \n"
-    //     "    dec rcx                                 ; --n\n"
-    //     "    jz .done                                ; n == 0"
-    //     "\n"
-    //     ".even_power:\n"
-    //     "    imul rax, rax                           ; x *= x\n"
-    //     "    shr rcx, 1                              ; n /= 2\n"
-    //     "    jnz .pow_loop                           ; n != 0\n"
-    //     "\n"
-    //     ".done:\n"
-    //     "    mov rax, rdx                            ; rax - ret val\n"
-    //     "    ret\n"
-    //     "\n"
-    //     ".zero_case:\n"
-    //     "    xor rax, rax                            ; rax = 0 - ret val\n"
-    //     "    ret\n\n"
-    // );
+    label_t func_out = {.name = "pow"};
+
+    TRANSLATION_ERROR_HANDLE(add_label(translator, &func_out));
+
+    uint8_t bytes[] = 
+    {
+        // load arguments
+        0x48, 0x8b, 0x4c, 0x24, 0x08,     // mov    0x8(%rsp),%rcx   
+        0x48, 0x8b, 0x44, 0x24, 0x10,     // mov    0x10(%rsp),%rax  
+        0xba, 0x01, 0x00, 0x00, 0x00,     // mov    $0x1,%edx       
+    
+        // Special case checks
+        0x48, 0x85, 0xc9,                 // test   %rcx,%rcx 
+        0x74, 0x21,                       // je     pow.done         
+        
+        0x48, 0x83, 0xf8, 0x01,          // cmp    $0x1,%rax  
+        0x74, 0x1b,                       // je     pow.done     
+        
+        0x48, 0x85, 0xc0,                 // test   %rax,%rax     
+        0x74, 0x1a,                       // je     pow.zero_case 
+    
+        // pow.pow_loop
+        0x48, 0xf7, 0xc1, 0x01, 0x00, 0x00, 0x00, // test $0x1,%rcx 
+        0x74, 0x04,                       // je     pow.even_power 
+        
+        // Odd case
+        0x48, 0x0f, 0xaf, 0xd0,          // imul   %rax,%rdx    
+    
+        // pow.even_power
+        0x48, 0x0f, 0xaf, 0xc0,           // imul   %rax,%rax     
+        0x48, 0xd1, 0xe9,                 // shr    $1,%rcx         
+        0x75, 0xea,                       // jne    pow.pow_loop    
+    
+        // pow.done
+        0x48, 0x89, 0xd0,                 // mov    %rdx,%rax    
+        0xc3,                             // ret
+    
+        // pow.zero_case
+        0x48, 0x31, 0xc0,                 // xor    %rax,%rax    
+        0xc3                              // ret
+    };
+
+    const size_t bytes_size = sizeof(bytes);
+
+    TRANSLATION_ERROR_HANDLE(write_arr_text(translator, bytes, bytes_size));
+
+    translator->cur_addr += bytes_size;
 
     return TRANSLATION_ERROR_SUCCESS;
 }

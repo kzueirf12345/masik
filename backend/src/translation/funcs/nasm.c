@@ -27,10 +27,10 @@ enum TranslationError translate_nasm(const fist_t* const fist, FILE* out)
     lassert(!is_invalid_ptr(out), "");
 
     fprintf(out, 
-        "section .data\n"
-        "HexTable db \"0123456789ABCDEF\"\n"
-        "InputBufferSize equ 32\n"
-        "InputBuffer: times InputBufferSize db 0\n"
+        // "section .data\n"
+        // "HexTable db \"0123456789ABCDEF\"\n"
+        // "InputBufferSize equ 32\n"
+        // "InputBuffer: times InputBufferSize db 0\n"
         "section .text\n"
         "global _start\n\n"
     );
@@ -277,12 +277,12 @@ static enum TranslationError translate_SYSCALL(const ir_block_t* const block, FI
 
     fprintf(out, "call %s\n", block->label_str);
 
+    fprintf(out, "add rsp, %zu\n", 8*block->operand1_num);
+
     if (kIR_SYS_CALL_ARRAY[block->operand2_num].HaveRetVal)
     {
         fprintf(out, "push rax ; ret val\n");
     }
-
-    fprintf(out, "add rsp, %zu\n", 8*block->operand1_num);
 
     return TRANSLATION_ERROR_SUCCESS;
 }
@@ -321,9 +321,10 @@ static enum TranslationError translate_syscall_in_(FILE* out)
         ";;; Destroy:    rcx, rdx, rsi, rdi, r11\n"
         ";;; ---------------------------------------------\n"
         "in:\n"
-        "    mov rsi, InputBuffer                       ; rsi - buffer addr\n"
-        "    mov rdx, InputBufferSize                   ; rdx - buffer size\n"\
+        "    mov rdx, 32                                ; rdx - buffer size\n"\
         "    mov r10, 10                                ; r10 - base\n"
+        "    sub rsp, rdx\n"
+        "    mov rsi, rsp                               ; rsi - buffer addr\n"
         "\n"
         "    xor rax, rax                               ; sys_read\n"
         "    xor rdi, rdi                               ; stdin\n"
@@ -368,9 +369,11 @@ static enum TranslationError translate_syscall_in_(FILE* out)
         "    neg rax\n"
         "\n"
         ".ExitSuccess:\n"
+        "    add rsp, rdx\n"
         "    ret\n"
         "\n"
         ".ExitError:\n"
+        "    add rsp, rdx\n"
         "    xor rax, rax                               ; return 0 if error\n"
         "    ret\n\n"
     );
@@ -490,8 +493,6 @@ static enum TranslationError translate_syscall_pow_(FILE* out)
         "    test rcx, 1                             ; check even\n"
         "    jz .even_power\n"
         "    imul rdx, rax                           ; res *= x \n"
-        "    dec rcx                                 ; --n\n"
-        "    jz .done                                ; n == 0"
         "\n"
         ".even_power:\n"
         "    imul rax, rax                           ; x *= x\n"

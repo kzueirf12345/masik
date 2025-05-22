@@ -1,7 +1,3 @@
-section .data
-HexTable db "0123456789ABCDEF"
-InputBufferSize equ 32
-InputBuffer: times InputBufferSize db 0
 section .text
 global _start
 
@@ -21,7 +17,11 @@ mov rsp, rbp
 sub rsp, 24 ; rsp = rbp - local_vars_cnt
 push rax ; ret val
 push rbx ; old rbp
-push 10
+push 0
+pop qword [rbp-8]
+call in
+add rsp, 0
+push rax ; ret val
 pop qword [rbp-8]
 push qword [rbp-8]
 call out
@@ -265,9 +265,10 @@ syscall
 ;;; Destroy:    rcx, rdx, rsi, rdi, r11
 ;;; ---------------------------------------------
 in:
-    mov rsi, InputBuffer                       ; rsi - buffer addr
-    mov rdx, InputBufferSize                   ; rdx - buffer size
+    mov rdx, 32                                ; rdx - buffer size
     mov r10, 10                                ; r10 - base
+    sub rsp, rdx
+    mov rsi, rsp                               ; rsi - buffer addr
 
     xor rax, rax                               ; sys_read
     xor rdi, rdi                               ; stdin
@@ -312,9 +313,11 @@ in:
     neg rax
 
 .ExitSuccess:
+    add rsp, rdx
     ret
 
 .ExitError:
+    add rsp, rdx
     xor rax, rax                               ; return 0 if error
     ret
 
@@ -416,8 +419,7 @@ pow:
     test rcx, 1                             ; check even
     jz .even_power
     imul rdx, rax                           ; res *= x 
-    dec rcx                                 ; --n
-    jz .done                                ; n == 0
+
 .even_power:
     imul rax, rax                           ; x *= x
     shr rcx, 1                              ; n /= 2

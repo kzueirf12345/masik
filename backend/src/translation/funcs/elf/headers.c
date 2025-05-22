@@ -118,7 +118,7 @@ enum TranslationError elf_headers_ctor(elf_translator_t* const translator, elf_h
             .sh_size = data_size,
             .sh_link = 0,
             .sh_info = 0,
-            .sh_addralign = 1,
+            .sh_addralign = 4,
             .sh_entsize = 0
         }
     };
